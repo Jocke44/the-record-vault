@@ -9,7 +9,7 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 ## Highlights
 
 - **Cinematic dark UI**: A Tidal/Spotify‑inspired layout designed for evening listening sessions and big screens.
-- **Format‑aware collection**: Built specifically for **vinyl**, **CDs**, and **EPs**, not just generic “albums”.
+- **Format‑aware collection**: Built specifically for **Vinyl**, **CDs**, and **EPs**, not just generic “albums”.
 - **Grid-first browsing**: Quickly scan your library through rich, poster-like grids.
 - **Live search & format filters**: Find bands and albums as you type, and narrow the home screen by physical format.
 
