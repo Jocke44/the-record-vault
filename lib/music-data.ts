@@ -3,11 +3,13 @@ export interface Track {
   title: string;
 }
 
+export type AlbumFormat = "Vinyl" | "CD" | "EP";
+
 export interface Album {
   id: string;
   title: string;
   year: number;
-  format: "Vinyl" | "CD" | "EP";
+  format: AlbumFormat;
   tracks: Track[];
 }
 
@@ -210,6 +212,51 @@ export const musicCollection: Band[] = [
           { number: 5, title: "Thousand Doorless Rooms" },
           { number: 6, title: "Suffer Existence" },
           { number: 7, title: "Ro" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "mastodon",
+    name: "Mastodon",
+    albums: [
+      {
+        id: "lifesblood",
+        title: "Lifesblood",
+        year: 2001,
+        format: "EP",
+        tracks: [
+          { number: 1, title: "Lifesblood" },
+          { number: 2, title: "Welcoming War" },
+          { number: 3, title: "We Built This Come Death" },
+          { number: 4, title: "Battle at Sea" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "tool",
+    name: "Tool",
+    albums: [
+      {
+        id: "lateralus",
+        title: "Lateralus",
+        year: 2001,
+        format: "CD",
+        tracks: [
+          { number: 1, title: "The Grudge" },
+          { number: 2, title: "Eon Blue Apocalypse" },
+          { number: 3, title: "The Patient" },
+          { number: 4, title: "Mantra" },
+          { number: 5, title: "Schism" },
+          { number: 6, title: "Parabol" },
+          { number: 7, title: "Parabola" },
+          { number: 8, title: "Ticks & Leeches" },
+          { number: 9, title: "Lateralus" },
+          { number: 10, title: "Disposition" },
+          { number: 11, title: "Reflection" },
+          { number: 12, title: "Triad" },
+          { number: 13, title: "Faaip de Oiad" },
         ],
       },
     ],
