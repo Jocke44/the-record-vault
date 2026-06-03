@@ -27,7 +27,7 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
   Open an album to see artwork, metadata, and **full tracklists** for each record.
 
 - **Real-time search**  
-  The navbar search bar filters as you type — **bands by name** on the home screen, **albums by title or year** when viewing a band. Matching is case-insensitive and supports partial text (e.g. `gre` finds Graveyard and Greta Van Fleet).
+  The navbar search bar filters as you type — **bands by name** on the home screen, **albums by title or year** when viewing a band. Matching is case-insensitive and supports partial text (e.g. `gr` finds Graveyard and Greta Van Fleet).
 
 - **Format filter buttons**  
   On the home screen, filter by **All**, **Vinyl**, **CD**, or **EP** to show only bands that own at least one release in that format. Format filters combine with search (e.g. `gr` + **Vinyl** shows matching bands that also have vinyl in the collection).
