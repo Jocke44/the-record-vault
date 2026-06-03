@@ -1,6 +1,6 @@
 # The Record Vault
 
-**The Record Vault** is a personal music collection manager for people who love physical formats — vinyl records, CDs, and EPs — wrapped in a dark, streaming-era interface inspired by Tidal and Spotify.
+**The Record Vault** is a personal music collection manager for people who love physical formats — Vinyl records, CDs, and EPs — wrapped in a dark, streaming-era interface inspired by Tidal and Spotify.
 
 Browse your shelves visually, drill into albums with beautiful artwork, and keep track of what you own without losing the tactile charm of crates and jewel cases.
 
@@ -21,7 +21,7 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
   See your collection by artist with a responsive grid view that makes it easy to jump into any band.
 
 - **Album grid with format badges**  
-  Browse albums with clear **format badges** (vinyl, CD, EP) so you always know which version you own.
+  Browse albums with clear **format badges** (Vinyl, CD, EP) so you always know which version you own.
 
 - **Album detail view & tracklists**  
   Open an album to see artwork, metadata, and **full tracklists** for each record.
@@ -30,7 +30,7 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
   The navbar search bar filters as you type — **bands by name** on the home screen, **albums by title or year** when viewing a band. Matching is case-insensitive and supports partial text (e.g. `gr` finds Graveyard and Greta Van Fleet).
 
 - **Format filter buttons**  
-  On the home screen, filter by **All**, **Vinyl**, **CD**, or **EP** to show only bands that own at least one release in that format. Format filters combine with search (e.g. `gr` + **Vinyl** shows matching bands that also have vinyl in the collection).
+  On the home screen, filter by **All**, **Vinyl**, **CD**, or **EP** to show only bands that own at least one release in that format. Format filters combine with search (e.g. `gr` + **Vinyl** shows matching bands that also have Vinyl in the collection).
 
 ---
 
