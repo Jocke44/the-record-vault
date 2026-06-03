@@ -11,6 +11,7 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 - **Cinematic dark UI**: A Tidal/Spotify‑inspired layout designed for evening listening sessions and big screens.
 - **Format‑aware collection**: Built specifically for **vinyl**, **CDs**, and **EPs**, not just generic “albums”.
 - **Grid-first browsing**: Quickly scan your library through rich, poster-like grids.
+- **Live search & format filters**: Find bands and albums as you type, and narrow the home screen by physical format.
 
 ---
 
@@ -25,16 +26,24 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 - **Album detail view & tracklists**  
   Open an album to see artwork, metadata, and **full tracklists** for each record.
 
+- **Real-time search**  
+  The navbar search bar filters as you type — **bands by name** on the home screen, **albums by title or year** when viewing a band. Matching is case-insensitive and supports partial text (e.g. `gre` finds Graveyard and Greta Van Fleet).
+
+- **Format filter buttons**  
+  On the home screen, filter by **All**, **Vinyl**, **CD**, or **EP** to show only bands that own at least one release in that format. Format filters combine with search (e.g. `gr` + **Vinyl** shows matching bands that also have vinyl in the collection).
+
 ---
 
 ## Roadmap
 
-The Record Vault is a **work in progress**. Planned upcoming features include:
+The Record Vault is built in layers. **Layer 2 is complete**; **Layer 3 is next**.
 
-- **Search** across bands, albums, and formats
-- **Add new records** directly from the UI
-- **Discogs API integration** for automatic metadata, artwork, and release info
-- **Barcode scanning** to add records by scanning the physical release
+| Layer | Status | Focus |
+|-------|--------|--------|
+| **Layer 1** | Done | Dark UI, band/album grids, album detail & tracklists, sample collection data |
+| **Layer 2** | **Done** | Real-time search (bands & albums) and format filters (All / Vinyl / CD / EP) |
+| **Layer 3** | **Next** | Database storage — persist the collection instead of static in-memory data |
+| **Later** | Planned | Add new records from the UI, Discogs API integration, barcode scanning |
 
 If you have ideas or want a feature prioritized, feel free to open an issue or share feedback.
 
