@@ -1,18 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Disc, Home, Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BandCard } from "@/components/band-card";
 import { AlbumCard } from "@/components/album-card";
+import { AddAlbumDialog } from "@/components/add-album-dialog";
 import { AlbumDetail } from "@/components/album-detail";
-import {
-  musicCollection,
-  type Band,
-  type Album,
-  type AlbumFormat,
-} from "@/lib/music-data";
+import { fetchMusicCollection } from "@/lib/fetch-music-collection";
+import type { Band, Album, AlbumFormat } from "@/lib/music-data";
 import { cn } from "@/lib/utils";
 
 type View = "bands" | "albums" | "detail";
@@ -29,11 +26,50 @@ function bandHasFormat(band: Band, format: AlbumFormat) {
 }
 
 export function RecordVault() {
+  const [musicCollection, setMusicCollection] = useState<Band[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<View>("bands");
   const [selectedBand, setSelectedBand] = useState<Band | null>(null);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [formatFilter, setFormatFilter] = useState<FormatFilter>("All");
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+
+  const refreshCollection = useCallback(async () => {
+    const data = await fetchMusicCollection();
+    setMusicCollection(data);
+    setSelectedBand((prev) => {
+      if (!prev) return prev;
+      return data.find((band) => band.id === prev.id) ?? prev;
+    });
+    setSelectedAlbum((prev) => {
+      if (!prev) return prev;
+      for (const band of data) {
+        const album = band.albums.find((a) => a.id === prev.id);
+        if (album) return album;
+      }
+      return prev;
+    });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchMusicCollection()
+      .then((data) => {
+        if (!cancelled) setMusicCollection(data);
+      })
+      .catch((error) => {
+        console.error("Failed to load collection:", error);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const normalizedSearch = searchQuery.trim().toLowerCase();
 
@@ -115,14 +151,24 @@ export function RecordVault() {
             />
           </div>
 
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setAddDialogOpen(true)}>
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Add New</span>
           </Button>
         </div>
       </nav>
 
+      <AddAlbumDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onSuccess={refreshCollection}
+      />
+
       <main className="container mx-auto px-4 py-8">
+        {loading ? (
+          <p className="text-muted-foreground">Loading...</p>
+        ) : (
+          <>
         {currentView === "bands" && (
           <div className="flex flex-col gap-6">
             <h2 className="text-xl font-semibold text-foreground">Your Collection</h2>
@@ -208,6 +254,8 @@ export function RecordVault() {
             artistName={selectedBand.name}
             onBack={handleBackToAlbums}
           />
+        )}
+          </>
         )}
       </main>
     </div>
