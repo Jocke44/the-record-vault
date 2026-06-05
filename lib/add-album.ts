@@ -1,11 +1,16 @@
 import type { AlbumFormat } from "@/lib/music-data";
 import { supabase } from "@/lib/supabase";
 
+export interface TrackInput {
+  title: string;
+}
+
 export interface AddAlbumInput {
   bandName: string;
   albumTitle: string;
   year: number;
   format: AlbumFormat;
+  tracks: TrackInput[];
 }
 
 export async function addAlbum(input: AddAlbumInput): Promise<void> {
@@ -38,12 +43,33 @@ export async function addAlbum(input: AddAlbumInput): Promise<void> {
     bandId = newBand.id;
   }
 
-  const { error: insertAlbumError } = await supabase.from("albums").insert({
-    title: albumTitle,
-    year: input.year,
-    format: input.format,
-    band_id: bandId,
-  });
+  const { data: newAlbum, error: insertAlbumError } = await supabase
+    .from("albums")
+    .insert({
+      title: albumTitle,
+      year: input.year,
+      format: input.format,
+      band_id: bandId,
+    })
+    .select("id")
+    .single();
 
   if (insertAlbumError) throw insertAlbumError;
+
+  const tracksToInsert = input.tracks
+    .map((t) => t.title.trim())
+    .filter((title) => title.length > 0)
+    .map((title, index) => ({
+      title,
+      track_number: index + 1,
+      album_id: newAlbum.id,
+    }));
+
+  if (tracksToInsert.length > 0) {
+    const { error: insertTracksError } = await supabase
+      .from("tracks")
+      .insert(tracksToInsert);
+
+    if (insertTracksError) throw insertTracksError;
+  }
 }
