@@ -12,6 +12,8 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 - **Format‑aware collection**: Built specifically for **Vinyl**, **CDs**, and **EPs**, not just generic “albums”.
 - **Grid-first browsing**: Quickly scan your library through rich, poster-like grids.
 - **Live search & format filters**: Find bands and albums as you type, and narrow the home screen by physical format.
+- **Persistent database**: All records are stored in a Supabase PostgreSQL database — your collection survives page reloads and is ready to sync across devices.
+- **Add new records**: The **Add New** button opens a modal form to add a band and album to the database in one step.
 
 ---
 
@@ -32,18 +34,25 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 - **Format filter buttons**  
   On the home screen, filter by **All**, **Vinyl**, **CD**, or **EP** to show only bands that own at least one release in that format. Format filters combine with search (e.g. `gr` + **Vinyl** shows matching bands that also have Vinyl in the collection).
 
+- **Supabase-backed persistence**  
+  All bands, albums, and tracks are stored in a PostgreSQL database on Supabase. Data is fetched live on page load — no static mock data in production.
+
+- **Add New modal**  
+  The **Add New** button in the navbar opens a form for entering a band name, album title, year, and format. On submit the app checks whether the band already exists and reuses or creates it, inserts the album, then immediately refreshes the UI.
+
 ---
 
 ## Roadmap
 
-The Record Vault is built in layers. **Layer 2 is complete**; **Layer 3 is next**.
+The Record Vault is built in layers. **Layer 3 is complete**; **Layer 4 is next**.
 
 | Layer | Status | Focus |
 |-------|--------|--------|
 | **Layer 1** | Done | Dark UI, band/album grids, album detail & tracklists, sample collection data |
-| **Layer 2** | **Done** | Real-time search (bands & albums) and format filters (All / Vinyl / CD / EP) |
-| **Layer 3** | **Next** | Database storage — persist the collection instead of static in-memory data |
-| **Later** | Planned | Add new records from the UI, Discogs API integration, barcode scanning |
+| **Layer 2** | Done | Real-time search (bands & albums) and format filters (All / Vinyl / CD / EP) |
+| **Layer 3** | **Done** | Supabase PostgreSQL database — live data fetching, Add New modal form to insert bands & albums |
+| **Layer 4** | **Next** | Discogs API integration — auto-fill album metadata, artwork, and tracklists by searching Discogs |
+| **Later** | Planned | Barcode scanning, collection statistics, export/import |
 
 If you have ideas or want a feature prioritized, feel free to open an issue or share feedback.
 
@@ -54,6 +63,19 @@ If you have ideas or want a feature prioritized, feel free to open an issue or s
 - **Framework:** Next.js  
 - **UI:** React  
 - **Language:** TypeScript  
+- **Database:** Supabase (PostgreSQL) — three tables: `bands`, `albums`, `tracks`  
+- **Auth / API:** Supabase anon key via `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+### Environment variables
+
+Create a `.env.local` file in the project root:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-public-key>
+```
+
+Both values are found in **Supabase Dashboard → Settings → API**.
 
 ### Run locally
 
