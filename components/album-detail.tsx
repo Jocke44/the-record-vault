@@ -23,8 +23,16 @@ export function AlbumDetail({ album, artistName, onBack }: AlbumDetailProps) {
       </Button>
 
       <div className="flex flex-col gap-8 md:flex-row md:gap-12">
-        <div className="flex aspect-square w-full max-w-xs items-center justify-center rounded-lg bg-card border border-border">
-          <Disc3 className="h-24 w-24 text-muted-foreground" />
+        <div className="flex aspect-square w-full max-w-xs items-center justify-center overflow-hidden rounded-lg bg-card border border-border">
+          {album.coverImage ? (
+            <img
+              src={album.coverImage}
+              alt={album.title}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <Disc3 className="h-24 w-24 text-muted-foreground" />
+          )}
         </div>
 
         <div className="flex flex-col gap-4">

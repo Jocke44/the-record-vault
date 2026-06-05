@@ -3,8 +3,8 @@ import { supabase } from "@/lib/supabase";
 
 export async function fetchMusicCollection(): Promise<Band[]> {
   const [bandsResult, albumsResult, tracksResult] = await Promise.all([
-    supabase.from("bands").select("id, name"),
-    supabase.from("albums").select("id, title, year, format, band_id"),
+    supabase.from("bands").select("id, name, cover_image"),
+    supabase.from("albums").select("id, title, year, format, band_id, cover_image"),
     supabase.from("tracks").select("id, title, track_number, album_id"),
   ]);
 
@@ -31,6 +31,7 @@ export async function fetchMusicCollection(): Promise<Band[]> {
       year: row.year,
       format: row.format as AlbumFormat,
       tracks: tracksByAlbumId.get(row.id) ?? [],
+      coverImage: row.cover_image ?? undefined,
     };
     const bandAlbums = albumsByBandId.get(row.band_id) ?? [];
     bandAlbums.push(album);
@@ -41,5 +42,6 @@ export async function fetchMusicCollection(): Promise<Band[]> {
     id: String(row.id),
     name: row.name,
     albums: albumsByBandId.get(row.id) ?? [],
+    coverImage: row.cover_image ?? undefined,
   }));
 }

@@ -11,6 +11,8 @@ export interface AddAlbumInput {
   year: number;
   format: AlbumFormat;
   tracks: TrackInput[];
+  coverImage?: string;
+  bandCoverImage?: string;
 }
 
 export async function addAlbum(input: AddAlbumInput): Promise<void> {
@@ -35,7 +37,10 @@ export async function addAlbum(input: AddAlbumInput): Promise<void> {
   } else {
     const { data: newBand, error: insertBandError } = await supabase
       .from("bands")
-      .insert({ name: bandName })
+      .insert({
+        name: bandName,
+        ...(input.bandCoverImage ? { cover_image: input.bandCoverImage } : {}),
+      })
       .select("id")
       .single();
 
@@ -50,6 +55,7 @@ export async function addAlbum(input: AddAlbumInput): Promise<void> {
       year: input.year,
       format: input.format,
       band_id: bandId,
+      ...(input.coverImage ? { cover_image: input.coverImage } : {}),
     })
     .select("id")
     .single();

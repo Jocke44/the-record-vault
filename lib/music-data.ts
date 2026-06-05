@@ -11,12 +11,14 @@ export interface Album {
   year: number;
   format: AlbumFormat;
   tracks: Track[];
+  coverImage?: string;
 }
 
 export interface Band {
   id: string;
   name: string;
   albums: Album[];
+  coverImage?: string;
 }
 
 export const musicCollection: Band[] = [
