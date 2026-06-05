@@ -13,7 +13,9 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 - **Grid-first browsing**: Quickly scan your library through rich, poster-like grids.
 - **Live search & format filters**: Find bands and albums as you type, and narrow the home screen by physical format.
 - **Persistent database**: All records are stored in a Supabase PostgreSQL database — your collection survives page reloads and is ready to sync across devices.
-- **Add new records**: The **Add New** button opens a modal form to add a band and album to the database in one step.
+- **Add new records**: The **Add New** button opens a modal with two modes — search Discogs to auto-fill everything, or add manually as a fallback.
+- **Discogs integration**: Search Discogs by album or artist name, pick the right pressing, and have the artist, title, year, format, tracklist, and cover art filled in automatically.
+- **Cover art everywhere**: Band cards and album cards display artwork fetched from Discogs, with placeholder icons for records added manually.
 
 ---
 
@@ -37,22 +39,29 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 - **Supabase-backed persistence**  
   All bands, albums, and tracks are stored in a PostgreSQL database on Supabase. Data is fetched live on page load — no static mock data in production.
 
-- **Add New modal**  
-  The **Add New** button in the navbar opens a form for entering a band name, album title, year, and format. On submit the app checks whether the band already exists and reuses or creates it, inserts the album, then immediately refreshes the UI.
+- **Add New — Discogs search**  
+  The **Add New** button opens a two-mode modal. In **Search Discogs** mode, type any album name or artist and browse matching pressings from the Discogs database. Clicking a result fetches the full release details and auto-fills the artist, title, year, format, tracklist, and cover art — then saves everything to Supabase in one step.
+
+- **Add New — manual fallback**  
+  Switch to **Add Manually** to enter all fields by hand, exactly as before. The app checks whether the band already exists and reuses or creates it, inserts the album and tracks, then immediately refreshes the UI.
+
+- **Cover art**  
+  Band cards display artist thumbnails and album cards display cover art, both sourced from Discogs. Records without a stored image fall back to icon placeholders.
 
 ---
 
 ## Roadmap
 
-The Record Vault is built in layers. **Layer 3 is complete**; **Layer 4 is next**.
+The Record Vault is built in layers. **Layer 4 is complete**; **Layer 5 is next**.
 
 | Layer | Status | Focus |
 |-------|--------|--------|
 | **Layer 1** | Done | Dark UI, band/album grids, album detail & tracklists, sample collection data |
 | **Layer 2** | Done | Real-time search (bands & albums) and format filters (All / Vinyl / CD / EP) |
-| **Layer 3** | **Done** | Supabase PostgreSQL database — live data fetching, Add New modal form to insert bands & albums |
-| **Layer 4** | **Next** | Discogs API integration — auto-fill album metadata, artwork, and tracklists by searching Discogs |
-| **Later** | Planned | Barcode scanning, collection statistics, export/import |
+| **Layer 3** | Done | Supabase PostgreSQL database — live data fetching, Add New modal form to insert bands & albums |
+| **Layer 4** | **Done** | Discogs API integration — search Discogs to auto-fill metadata, artwork, and tracklists; cover art on band and album cards |
+| **Layer 5** | **Next** | Barcode scanning — scan a record's barcode to identify and add it instantly |
+| **Later** | Planned | Collection statistics, export/import |
 
 If you have ideas or want a feature prioritized, feel free to open an issue or share feedback.
 
@@ -65,6 +74,7 @@ If you have ideas or want a feature prioritized, feel free to open an issue or s
 - **Language:** TypeScript  
 - **Database:** Supabase (PostgreSQL) — three tables: `bands`, `albums`, `tracks`  
 - **Auth / API:** Supabase anon key via `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- **Music metadata:** Discogs REST API — release search and full release details, proxied through Next.js server-side API routes to keep the token secure
 
 ### Environment variables
 
@@ -73,9 +83,11 @@ Create a `.env.local` file in the project root:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-public-key>
+DISCOGS_TOKEN=<your-discogs-personal-access-token>
 ```
 
-Both values are found in **Supabase Dashboard → Settings → API**.
+Supabase values are found in **Supabase Dashboard → Settings → API**.  
+The Discogs token is generated at **discogs.com → Settings → Developers → Generate new token**.
 
 ### Run locally
 
