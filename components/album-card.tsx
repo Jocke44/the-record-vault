@@ -14,7 +14,7 @@ export function AlbumCard({ album, onClick }: AlbumCardProps) {
       onClick={onClick}
       className="group flex flex-col gap-3 rounded-lg bg-card p-4 text-left transition-all duration-200 hover:bg-accent hover:scale-[1.02] border border-border"
     >
-      <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-md bg-muted">
+      <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-md bg-[#1a1a1f]">
         {album.coverImage ? (
           <img
             src={album.coverImage}
@@ -22,7 +22,7 @@ export function AlbumCard({ album, onClick }: AlbumCardProps) {
             className="h-full w-full object-cover"
           />
         ) : (
-          <Disc3 className="h-16 w-16 text-muted-foreground" />
+          <Disc3 className="h-12 w-12 text-white/10" strokeWidth={1.25} />
         )}
       </div>
       <div className="flex flex-col gap-1">

@@ -1,7 +1,9 @@
 import type { Album, AlbumFormat, Band, Track } from "@/lib/music-data";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/src/utils/supabase/client";
 
 export async function fetchMusicCollection(): Promise<Band[]> {
+  const supabase = createClient();
+
   const [bandsResult, albumsResult, tracksResult] = await Promise.all([
     supabase.from("bands").select("id, name, cover_image"),
     supabase.from("albums").select("id, title, year, format, band_id, cover_image"),

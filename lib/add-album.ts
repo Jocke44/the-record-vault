@@ -1,5 +1,5 @@
 import type { AlbumFormat } from "@/lib/music-data";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/src/utils/supabase/client";
 
 export interface TrackInput {
   title: string;
@@ -12,10 +12,23 @@ export interface AddAlbumInput {
   format: AlbumFormat;
   tracks: TrackInput[];
   coverImage?: string;
+  coverImageFile?: File;
   bandCoverImage?: string;
+  bandCoverImageFile?: File;
+  discogsReleaseId?: number;
 }
 
-export async function addAlbum(input: AddAlbumInput): Promise<void> {
+export async function addAlbum(
+  input: AddAlbumInput,
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "unknown" };
+
   const bandName = input.bandName.trim();
   const albumTitle = input.albumTitle.trim();
 
@@ -35,17 +48,52 @@ export async function addAlbum(input: AddAlbumInput): Promise<void> {
   if (existingBand) {
     bandId = existingBand.id;
   } else {
+    let resolvedBandCoverImage = input.bandCoverImage;
+
+    if (input.bandCoverImageFile) {
+      const file = input.bandCoverImageFile;
+      const filePath = `${user.id}/bands/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("covers")
+        .upload(filePath, file);
+
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage
+          .from("covers")
+          .getPublicUrl(filePath);
+        resolvedBandCoverImage = urlData.publicUrl;
+      }
+    }
+
     const { data: newBand, error: insertBandError } = await supabase
       .from("bands")
       .insert({
         name: bandName,
-        ...(input.bandCoverImage ? { cover_image: input.bandCoverImage } : {}),
+        user_id: user.id,
+        ...(resolvedBandCoverImage ? { cover_image: resolvedBandCoverImage } : {}),
       })
       .select("id")
       .single();
 
     if (insertBandError) throw insertBandError;
     bandId = newBand.id;
+  }
+
+  let resolvedCoverImage = input.coverImage;
+
+  if (input.coverImageFile) {
+    const file = input.coverImageFile;
+    const filePath = `${user.id}/${Date.now()}-${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from("covers")
+      .upload(filePath, file);
+
+    if (!uploadError) {
+      const { data: urlData } = supabase.storage
+        .from("covers")
+        .getPublicUrl(filePath);
+      resolvedCoverImage = urlData.publicUrl;
+    }
   }
 
   const { data: newAlbum, error: insertAlbumError } = await supabase
@@ -55,12 +103,19 @@ export async function addAlbum(input: AddAlbumInput): Promise<void> {
       year: input.year,
       format: input.format,
       band_id: bandId,
-      ...(input.coverImage ? { cover_image: input.coverImage } : {}),
+      user_id: user.id,
+      ...(resolvedCoverImage ? { cover_image: resolvedCoverImage } : {}),
+      ...(input.discogsReleaseId !== undefined ? { discogs_release_id: input.discogsReleaseId } : {}),
     })
     .select("id")
     .single();
 
-  if (insertAlbumError) throw insertAlbumError;
+  if (insertAlbumError) {
+    if (insertAlbumError.code === "23505") {
+      return { success: false, error: "duplicate" };
+    }
+    return { success: false, error: "unknown" };
+  }
 
   const tracksToInsert = input.tracks
     .map((t) => t.title.trim())
@@ -69,6 +124,7 @@ export async function addAlbum(input: AddAlbumInput): Promise<void> {
       title,
       track_number: index + 1,
       album_id: newAlbum.id,
+      user_id: user.id,
     }));
 
   if (tracksToInsert.length > 0) {
@@ -78,4 +134,6 @@ export async function addAlbum(input: AddAlbumInput): Promise<void> {
 
     if (insertTracksError) throw insertTracksError;
   }
+
+  return { success: true };
 }

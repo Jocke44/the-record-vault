@@ -1,7 +1,7 @@
 "use client";
 
-import { useId, useState } from "react";
-import { Search, Loader2, Plus, X } from "lucide-react";
+import { useId, useRef, useState } from "react";
+import { ImagePlus, Search, Loader2, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -74,6 +74,88 @@ function mapDiscogsFormat(name: string): AlbumFormat {
   return "Vinyl";
 }
 
+// ── ImagePicker ──────────────────────────────────────────────────────────────
+
+interface ImagePickerProps {
+  label: string;
+  preview: string | null;
+  fileName?: string;
+  inputRef: React.RefObject<HTMLInputElement>;
+  disabled: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemove: () => void;
+}
+
+function ImagePicker({
+  label,
+  preview,
+  fileName,
+  inputRef,
+  disabled,
+  onChange,
+  onRemove,
+}: ImagePickerProps) {
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-sm font-medium text-foreground">
+        {label}
+        <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+          optional
+        </span>
+      </span>
+
+      {preview ? (
+        <div className="flex flex-col gap-1.5">
+          <div className="h-20 w-20 overflow-hidden rounded-md border border-border">
+            <img
+              src={preview}
+              alt={`${label} preview`}
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <div className="flex items-center gap-1">
+            <p className="max-w-[100px] truncate text-[10px] text-muted-foreground">
+              {fileName}
+            </p>
+            <button
+              type="button"
+              onClick={onRemove}
+              disabled={disabled}
+              className="ml-auto flex shrink-0 items-center gap-0.5 text-[10px] text-muted-foreground transition-colors hover:text-destructive disabled:opacity-40"
+            >
+              <X className="h-2.5 w-2.5" />
+              Remove
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={disabled}
+          className={cn(
+            "flex h-20 w-20 flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-border",
+            "text-muted-foreground transition-colors hover:border-cyan-400/60 hover:text-cyan-400",
+            "disabled:cursor-not-allowed disabled:opacity-40",
+          )}
+        >
+          <ImagePlus className="h-5 w-5" />
+          <span className="text-[10px]">Add image</span>
+        </button>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={onChange}
+        disabled={disabled}
+      />
+    </div>
+  );
+}
+
 // ── Props ────────────────────────────────────────────────────────────────────
 
 interface AddAlbumDialogProps {
@@ -101,6 +183,7 @@ export function AddAlbumDialog({
     "idle" | "searching" | "results" | "loading-detail"
   >("idle");
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchWarning, setSearchWarning] = useState<string | null>(null);
 
   // Manual form state
   const [bandName, setBandName] = useState("");
@@ -108,6 +191,12 @@ export function AddAlbumDialog({
   const [year, setYear] = useState("");
   const [format, setFormat] = useState<AlbumFormat>("Vinyl");
   const [tracks, setTracks] = useState<TrackRow[]>(() => [makeTrack()]);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const [bandCoverImageFile, setBandCoverImageFile] = useState<File | null>(null);
+  const [bandCoverImagePreview, setBandCoverImagePreview] = useState<string | null>(null);
+  const bandCoverInputRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -119,11 +208,18 @@ export function AddAlbumDialog({
     setSearchResults([]);
     setSearchPhase("idle");
     setSearchError(null);
+    setSearchWarning(null);
     setBandName("");
     setAlbumTitle("");
     setYear("");
     setFormat("Vinyl");
     setTracks([makeTrack()]);
+    setCoverImageFile(null);
+    if (coverImagePreview) URL.revokeObjectURL(coverImagePreview);
+    setCoverImagePreview(null);
+    setBandCoverImageFile(null);
+    if (bandCoverImagePreview) URL.revokeObjectURL(bandCoverImagePreview);
+    setBandCoverImagePreview(null);
     setSubmitting(false);
     setFormError(null);
   };
@@ -139,6 +235,7 @@ export function AddAlbumDialog({
     const q = searchQuery.trim();
     if (!q) return;
     setSearchError(null);
+    setSearchWarning(null);
     setSearchResults([]);
     setSearchPhase("searching");
     try {
@@ -194,6 +291,7 @@ export function AddAlbumDialog({
         tracks: tracklist,
         coverImage: coverImage || undefined,
         bandCoverImage,
+        discogsReleaseId: result.id,
       };
       console.log("[Discogs] Saving album:", {
         bandName: albumPayload.bandName,
@@ -203,7 +301,17 @@ export function AddAlbumDialog({
         trackCount: albumPayload.tracks.length,
       });
 
-      await addAlbum(albumPayload);
+      const saveResult = await addAlbum(albumPayload);
+
+      if (!saveResult.success) {
+        if (saveResult.error === 'duplicate') {
+          setSearchWarning('This Discogs release is already in your collection.');
+        } else {
+          setSearchError('Could not save. Please try again.');
+        }
+        setSearchPhase('results');
+        return;
+      }
 
       resetAll();
       onOpenChange(false);
@@ -222,6 +330,44 @@ export function AddAlbumDialog({
   };
 
   // ── Manual form ──
+
+  const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (coverImagePreview) URL.revokeObjectURL(coverImagePreview);
+    if (file) {
+      setCoverImageFile(file);
+      setCoverImagePreview(URL.createObjectURL(file));
+    } else {
+      setCoverImageFile(null);
+      setCoverImagePreview(null);
+    }
+  };
+
+  const removeCoverImage = () => {
+    if (coverImagePreview) URL.revokeObjectURL(coverImagePreview);
+    setCoverImageFile(null);
+    setCoverImagePreview(null);
+    if (coverInputRef.current) coverInputRef.current.value = "";
+  };
+
+  const handleBandCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (bandCoverImagePreview) URL.revokeObjectURL(bandCoverImagePreview);
+    if (file) {
+      setBandCoverImageFile(file);
+      setBandCoverImagePreview(URL.createObjectURL(file));
+    } else {
+      setBandCoverImageFile(null);
+      setBandCoverImagePreview(null);
+    }
+  };
+
+  const removeBandCoverImage = () => {
+    if (bandCoverImagePreview) URL.revokeObjectURL(bandCoverImagePreview);
+    setBandCoverImageFile(null);
+    setBandCoverImagePreview(null);
+    if (bandCoverInputRef.current) bandCoverInputRef.current.value = "";
+  };
 
   const addTrack = () => setTracks((prev) => [...prev, makeTrack()]);
   const removeTrack = (id: number) =>
@@ -254,6 +400,8 @@ export function AddAlbumDialog({
         year: parsedYear,
         format,
         tracks: tracks.map((t) => ({ title: t.title })),
+        ...(coverImageFile ? { coverImageFile } : {}),
+        ...(bandCoverImageFile ? { bandCoverImageFile } : {}),
       });
       resetAll();
       onOpenChange(false);
@@ -358,6 +506,13 @@ export function AddAlbumDialog({
             {searchError && (
               <p className="text-sm text-destructive" role="alert">
                 {searchError}
+              </p>
+            )}
+
+            {/* Duplicate warning */}
+            {searchWarning && (
+              <p className="text-sm text-amber-400" role="alert">
+                {searchWarning}
               </p>
             )}
 
@@ -517,6 +672,33 @@ export function AddAlbumDialog({
                     </Select>
                   </div>
                 </div>
+              </div>
+
+              <div className="border-t border-border" />
+
+              {/* Images — album cover + band image side by side */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Album cover */}
+                <ImagePicker
+                  label="Cover image"
+                  preview={coverImagePreview}
+                  fileName={coverImageFile?.name}
+                  inputRef={coverInputRef}
+                  disabled={submitting}
+                  onChange={handleCoverFileChange}
+                  onRemove={removeCoverImage}
+                />
+
+                {/* Band image */}
+                <ImagePicker
+                  label="Band image"
+                  preview={bandCoverImagePreview}
+                  fileName={bandCoverImageFile?.name}
+                  inputRef={bandCoverInputRef}
+                  disabled={submitting}
+                  onChange={handleBandCoverFileChange}
+                  onRemove={removeBandCoverImage}
+                />
               </div>
 
               <div className="border-t border-border" />

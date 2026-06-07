@@ -14,7 +14,7 @@ export function BandCard({ band, onClick }: BandCardProps) {
       onClick={onClick}
       className="group flex flex-col items-center gap-4 rounded-lg bg-card p-6 text-left transition-all duration-200 hover:bg-accent hover:scale-[1.02] border border-border"
     >
-      <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full bg-muted">
+      <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full bg-[#1a1a1f]">
         {band.coverImage ? (
           <img
             src={band.coverImage}
@@ -22,7 +22,7 @@ export function BandCard({ band, onClick }: BandCardProps) {
             className="h-full w-full object-cover"
           />
         ) : (
-          <Music className="h-12 w-12 text-muted-foreground" />
+          <Music className="h-10 w-10 text-white/10" strokeWidth={1.25} />
         )}
       </div>
       <span className="text-lg font-medium text-card-foreground group-hover:text-foreground">

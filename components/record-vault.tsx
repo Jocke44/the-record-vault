@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Disc, Home, Plus, Search } from "lucide-react";
+import { createClient } from "@/src/utils/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BandCard } from "@/components/band-card";
@@ -26,6 +28,7 @@ function bandHasFormat(band: Band, format: AlbumFormat) {
 }
 
 export function RecordVault() {
+  const router = useRouter();
   const [musicCollection, setMusicCollection] = useState<Band[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<View>("bands");
@@ -116,6 +119,13 @@ export function RecordVault() {
     setCurrentView("albums");
   };
 
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* App Title */}
@@ -155,6 +165,14 @@ export function RecordVault() {
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Add New</span>
           </Button>
+
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="ml-auto text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Sign Out
+          </button>
         </div>
       </nav>
 
