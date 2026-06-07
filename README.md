@@ -15,7 +15,8 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 - **Persistent database**: All records are stored in a Supabase PostgreSQL database — your collection survives page reloads and is ready to sync across devices.
 - **Add new records**: The **Add New** button opens a modal with two modes — search Discogs to auto-fill everything, or add manually as a fallback.
 - **Discogs integration**: Search Discogs by album or artist name, pick the right pressing, and have the artist, title, year, format, tracklist, and cover art filled in automatically.
-- **Cover art everywhere**: Band cards and album cards display artwork fetched from Discogs, with placeholder icons for records added manually.
+- **Cover art everywhere**: Band cards and album cards display artwork fetched from Discogs or uploaded manually, with styled placeholder icons for records without an image.
+- **Per-user collections**: Every user only ever sees and manages their own records — secured by Supabase Auth and Row Level Security at the database level.
 
 ---
 
@@ -46,21 +47,38 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
   Switch to **Add Manually** to enter all fields by hand, exactly as before. The app checks whether the band already exists and reuses or creates it, inserts the album and tracks, then immediately refreshes the UI.
 
 - **Cover art**  
-  Band cards display artist thumbnails and album cards display cover art, both sourced from Discogs. Records without a stored image fall back to icon placeholders.
+  Band cards display artist thumbnails and album cards display cover art, sourced from Discogs or uploaded manually. Records without a stored image fall back to styled dark placeholders with a subtle vinyl or music-note icon.
+
+- **User accounts & route protection**  
+  Sign up or sign in with email and password. Unauthenticated visitors are redirected to `/login` by a Next.js middleware that runs on every request. Sessions are managed server-side via Supabase Auth cookies and refreshed automatically.
+
+- **Row Level Security**  
+  Every database row (`bands`, `albums`, `tracks`) is owned by the user who created it. Supabase RLS policies ensure each user can only read and write their own collection — no data leaks between accounts, even if the anon key is exposed.
+
+- **Duplicate prevention**  
+  A unique database constraint on `(user_id, discogs_release_id)` stops the same pressing from being added twice via Discogs search. When a duplicate is detected the app shows an inline warning instead of a generic error.
+
+- **Cover image uploads (manual adds)**  
+  When adding a record manually, optional **album cover** and **band image** file pickers appear in the form (jpg, png, webp). Selecting a file shows an instant preview before submitting. On save, images are uploaded to a public Supabase Storage bucket (`covers`) under a per-user path:
+  - Album covers → `covers/{user_id}/{timestamp}-{filename}`
+  - Band images → `covers/{user_id}/bands/{timestamp}-{filename}`
+
+  The returned public URL is stored in the database as `cover_image`. Band images are only uploaded when the band is being created — adding a second album to an existing band leaves the band image unchanged.
 
 ---
 
 ## Roadmap
 
-The Record Vault is built in layers. **Layer 4 is complete**; **Layer 5 is next**.
+The Record Vault is built in layers. **Layer 5 is complete**; **Layer 6 is next**.
 
 | Layer | Status | Focus |
 |-------|--------|--------|
 | **Layer 1** | Done | Dark UI, band/album grids, album detail & tracklists, sample collection data |
 | **Layer 2** | Done | Real-time search (bands & albums) and format filters (All / Vinyl / CD / EP) |
 | **Layer 3** | Done | Supabase PostgreSQL database — live data fetching, Add New modal form to insert bands & albums |
-| **Layer 4** | **Done** | Discogs API integration — search Discogs to auto-fill metadata, artwork, and tracklists; cover art on band and album cards |
-| **Layer 5** | **Next** | Barcode scanning — scan a record's barcode to identify and add it instantly |
+| **Layer 4** | Done | Discogs API integration — search Discogs to auto-fill metadata, artwork, and tracklists; cover art on band and album cards |
+| **Layer 5** | **Done** | Auth & security — Supabase Auth (email signup/signin), middleware route protection, RLS, duplicate prevention, cover image uploads to Supabase Storage |
+| **Layer 6** | **Next** | Barcode scanning — scan a record's barcode to identify and add it instantly |
 | **Later** | Planned | Collection statistics, export/import |
 
 If you have ideas or want a feature prioritized, feel free to open an issue or share feedback.
@@ -73,7 +91,9 @@ If you have ideas or want a feature prioritized, feel free to open an issue or s
 - **UI:** React  
 - **Language:** TypeScript  
 - **Database:** Supabase (PostgreSQL) — three tables: `bands`, `albums`, `tracks`  
-- **Auth / API:** Supabase anon key via `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- **Auth:** Supabase Auth — email/password signup and signin, server-side session cookies, Next.js middleware for route protection  
+- **Storage:** Supabase Storage — `covers` bucket for user-uploaded album and band images, stored under per-user paths  
+- **Security:** Row Level Security (RLS) on all tables; unique constraint on `(user_id, discogs_release_id)` for duplicate prevention  
 - **Music metadata:** Discogs REST API — release search and full release details, proxied through Next.js server-side API routes to keep the token secure
 
 ### Environment variables
