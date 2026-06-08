@@ -12,9 +12,16 @@ export async function GET(request: NextRequest) {
 
   const token = process.env.DISCOGS_TOKEN;
 
+  const trimmed = q.trim();
+  const isBarcode = /^\d{8,13}$/.test(trimmed);
+
   const url = new URL("https://api.discogs.com/database/search");
-  url.searchParams.set("q", q.trim());
   url.searchParams.set("type", "release");
+  if (isBarcode) {
+    url.searchParams.set("barcode", trimmed);
+  } else {
+    url.searchParams.set("q", trimmed);
+  }
 
   let response: Response;
   try {
