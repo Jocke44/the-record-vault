@@ -1,11 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Disc, Home, Plus, Search } from "lucide-react";
 import { createClient } from "@/src/utils/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +26,7 @@ import {
 import { BandCard } from "@/components/band-card";
 import { AlbumCard } from "@/components/album-card";
 import { AddAlbumDialog } from "@/components/add-album-dialog";
+import { EditAlbumDialog } from "@/components/edit-album-dialog";
 import { AlbumDetail } from "@/components/album-detail";
 import { fetchMusicCollection } from "@/lib/fetch-music-collection";
 import { deleteAlbum, deleteBand } from "@/lib/delete";
@@ -51,6 +59,13 @@ export function RecordVault() {
   const [pendingDeleteBand, setPendingDeleteBand] = useState<Band | null>(null);
   const [pendingDeleteAlbum, setPendingDeleteAlbum] = useState<Album | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [pendingEditBand, setPendingEditBand] = useState<Band | null>(null);
+  const [editBandName, setEditBandName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [pendingEditAlbum, setPendingEditAlbum] = useState<Album | null>(null);
+  // Keeps the last album alive during the dialog's exit animation
+  const lastEditAlbumRef = useRef<Album | null>(null);
+  if (pendingEditAlbum) lastEditAlbumRef.current = pendingEditAlbum;
 
   const refreshCollection = useCallback(async () => {
     const data = await fetchMusicCollection();
@@ -140,6 +155,27 @@ export function RecordVault() {
     router.refresh();
   };
 
+  const handleSaveEditBand = async () => {
+    if (!pendingEditBand) return;
+    const trimmed = editBandName.trim();
+    if (!trimmed) return;
+    setSaving(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("bands")
+        .update({ name: trimmed })
+        .eq("id", Number(pendingEditBand.id));
+      if (error) throw error;
+      setPendingEditBand(null);
+      await refreshCollection();
+    } catch (err) {
+      console.error("Failed to update band:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleConfirmDeleteBand = async () => {
     if (!pendingDeleteBand) return;
     setDeleting(true);
@@ -225,6 +261,55 @@ export function RecordVault() {
         onOpenChange={setAddDialogOpen}
         onSuccess={refreshCollection}
       />
+
+      {/* ── Edit band dialog ── */}
+      <Dialog
+        open={!!pendingEditBand}
+        onOpenChange={(open) => { if (!open && !saving) setPendingEditBand(null); }}
+      >
+        <DialogContent className="border-border bg-card text-foreground sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Edit band name</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={editBandName}
+            onChange={(e) => setEditBandName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleSaveEditBand(); }}
+            className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+            placeholder="Band name"
+            disabled={saving}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPendingEditBand(null)}
+              disabled={saving}
+              className="border-border"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSaveEditBand}
+              disabled={saving || !editBandName.trim()}
+            >
+              {saving ? "Saving…" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Edit album dialog ── */}
+      {lastEditAlbumRef.current && (
+        <EditAlbumDialog
+          album={lastEditAlbumRef.current}
+          open={!!pendingEditAlbum}
+          onClose={() => setPendingEditAlbum(null)}
+          onSaved={refreshCollection}
+        />
+      )}
 
       {/* ── Delete band confirmation ── */}
       <AlertDialog
@@ -334,6 +419,7 @@ export function RecordVault() {
                     key={band.id}
                     band={band}
                     onClick={() => handleBandClick(band)}
+                    onEdit={() => { setPendingEditBand(band); setEditBandName(band.name); }}
                     onDelete={() => setPendingDeleteBand(band)}
                   />
                 ))}
@@ -368,6 +454,7 @@ export function RecordVault() {
                     key={album.id}
                     album={album}
                     onClick={() => handleAlbumClick(album)}
+                    onEdit={() => setPendingEditAlbum(album)}
                     onDelete={() => setPendingDeleteAlbum(album)}
                   />
                 ))}
