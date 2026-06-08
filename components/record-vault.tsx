@@ -6,11 +6,22 @@ import { ArrowLeft, Disc, Home, Plus, Search } from "lucide-react";
 import { createClient } from "@/src/utils/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { BandCard } from "@/components/band-card";
 import { AlbumCard } from "@/components/album-card";
 import { AddAlbumDialog } from "@/components/add-album-dialog";
 import { AlbumDetail } from "@/components/album-detail";
 import { fetchMusicCollection } from "@/lib/fetch-music-collection";
+import { deleteAlbum, deleteBand } from "@/lib/delete";
 import type { Band, Album, AlbumFormat } from "@/lib/music-data";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +48,9 @@ export function RecordVault() {
   const [searchQuery, setSearchQuery] = useState("");
   const [formatFilter, setFormatFilter] = useState<FormatFilter>("All");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [pendingDeleteBand, setPendingDeleteBand] = useState<Band | null>(null);
+  const [pendingDeleteAlbum, setPendingDeleteAlbum] = useState<Album | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const refreshCollection = useCallback(async () => {
     const data = await fetchMusicCollection();
@@ -126,6 +140,36 @@ export function RecordVault() {
     router.refresh();
   };
 
+  const handleConfirmDeleteBand = async () => {
+    if (!pendingDeleteBand) return;
+    setDeleting(true);
+    try {
+      await deleteBand(pendingDeleteBand.id);
+      if (selectedBand?.id === pendingDeleteBand.id) handleBackToBands();
+      setPendingDeleteBand(null);
+      await refreshCollection();
+    } catch (err) {
+      console.error("Failed to delete band:", err);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleConfirmDeleteAlbum = async () => {
+    if (!pendingDeleteAlbum) return;
+    setDeleting(true);
+    try {
+      await deleteAlbum(pendingDeleteAlbum.id);
+      if (selectedAlbum?.id === pendingDeleteAlbum.id) handleBackToAlbums();
+      setPendingDeleteAlbum(null);
+      await refreshCollection();
+    } catch (err) {
+      console.error("Failed to delete album:", err);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* App Title */}
@@ -182,6 +226,70 @@ export function RecordVault() {
         onSuccess={refreshCollection}
       />
 
+      {/* ── Delete band confirmation ── */}
+      <AlertDialog
+        open={!!pendingDeleteBand}
+        onOpenChange={(open) => { if (!open && !deleting) setPendingDeleteBand(null); }}
+      >
+        <AlertDialogContent className="border-border bg-card text-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {pendingDeleteBand?.name}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove all albums and tracks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={deleting}
+              className="border-border"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => { e.preventDefault(); handleConfirmDeleteBand(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Delete album confirmation ── */}
+      <AlertDialog
+        open={!!pendingDeleteAlbum}
+        onOpenChange={(open) => { if (!open && !deleting) setPendingDeleteAlbum(null); }}
+      >
+        <AlertDialogContent className="border-border bg-card text-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {pendingDeleteAlbum?.title}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove all tracks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={deleting}
+              className="border-border"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => { e.preventDefault(); handleConfirmDeleteAlbum(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <main className="container mx-auto px-4 py-8">
         {loading ? (
           <p className="text-muted-foreground">Loading...</p>
@@ -226,6 +334,7 @@ export function RecordVault() {
                     key={band.id}
                     band={band}
                     onClick={() => handleBandClick(band)}
+                    onDelete={() => setPendingDeleteBand(band)}
                   />
                 ))}
               </div>
@@ -259,6 +368,7 @@ export function RecordVault() {
                     key={album.id}
                     album={album}
                     onClick={() => handleAlbumClick(album)}
+                    onDelete={() => setPendingDeleteAlbum(album)}
                   />
                 ))}
               </div>
