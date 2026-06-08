@@ -1,8 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { Camera, ImagePlus, Search, Loader2, Plus, X } from "lucide-react";
-import { useZxing } from "react-zxing";
+import { ImagePlus, Search, Loader2, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -157,41 +156,6 @@ function ImagePicker({
   );
 }
 
-// ── BarcodeScanner ───────────────────────────────────────────────────────────
-
-function BarcodeScanner({
-  onScan,
-  onClose,
-}: {
-  onScan: (code: string) => void;
-  onClose: () => void;
-}) {
-  const scannedRef = useRef(false);
-  const { ref } = useZxing({
-    onDecodeResult(result) {
-      if (scannedRef.current) return;
-      scannedRef.current = true;
-      onScan(result.rawValue);
-    },
-  });
-  return (
-    <div className="relative overflow-hidden rounded-md border border-border bg-black">
-      <video ref={ref} className="w-full rounded-md" />
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white transition-colors hover:bg-black/80"
-        aria-label="Close scanner"
-      >
-        <X className="h-4 w-4" />
-      </button>
-      <p className="absolute bottom-2 left-0 right-0 text-center text-xs text-white/80">
-        Point camera at a barcode
-      </p>
-    </div>
-  );
-}
-
 // ── Props ────────────────────────────────────────────────────────────────────
 
 interface AddAlbumDialogProps {
@@ -220,7 +184,6 @@ export function AddAlbumDialog({
   >("idle");
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchWarning, setSearchWarning] = useState<string | null>(null);
-  const [scannerOpen, setScannerOpen] = useState(false);
 
   // Manual form state
   const [bandName, setBandName] = useState("");
@@ -246,7 +209,6 @@ export function AddAlbumDialog({
     setSearchPhase("idle");
     setSearchError(null);
     setSearchWarning(null);
-    setScannerOpen(false);
     setBandName("");
     setAlbumTitle("");
     setYear("");
@@ -269,8 +231,8 @@ export function AddAlbumDialog({
 
   // ── Discogs search ──
 
-  const handleSearch = async (overrideQuery?: string) => {
-    const q = (overrideQuery ?? searchQuery).trim();
+  const handleSearch = async () => {
+    const q = searchQuery.trim();
     if (!q) return;
     setSearchError(null);
     setSearchWarning(null);
@@ -519,19 +481,7 @@ export function AddAlbumDialog({
               />
               <Button
                 type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setScannerOpen((v) => !v)}
-                disabled={isDisabled}
-                className="shrink-0 border-border"
-                aria-label="Scan barcode"
-                title="Scan barcode"
-              >
-                <Camera className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                onClick={() => handleSearch()}
+                onClick={handleSearch}
                 disabled={isDisabled || !searchQuery.trim()}
                 className="shrink-0 gap-1.5"
               >
@@ -543,18 +493,6 @@ export function AddAlbumDialog({
                 {searchPhase === "searching" ? "Searching…" : "Search"}
               </Button>
             </div>
-
-            {/* Barcode scanner */}
-            {scannerOpen && (
-              <BarcodeScanner
-                onScan={(code) => {
-                  setScannerOpen(false);
-                  setSearchQuery(code);
-                  handleSearch(code);
-                }}
-                onClose={() => setScannerOpen(false)}
-              />
-            )}
 
             {/* Loading detail indicator */}
             {searchPhase === "loading-detail" && (
