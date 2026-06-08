@@ -16,6 +16,8 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 - **Add new records**: The **Add New** button opens a modal with two modes — search Discogs to auto-fill everything, or add manually as a fallback.
 - **Discogs integration**: Search Discogs by album or artist name, pick the right pressing, and have the artist, title, year, format, tracklist, and cover art filled in automatically.
 - **Cover art everywhere**: Band cards and album cards display artwork fetched from Discogs or uploaded manually, with styled placeholder icons for records without an image.
+- **Full edit support**: Edit band names, album details, and tracklists directly from the collection view.
+- **Delete with confirmation**: Remove bands or albums with a confirmation step before any data is lost.
 - **Per-user collections**: Every user only ever sees and manages their own records — secured by Supabase Auth and Row Level Security at the database level.
 
 ---
@@ -49,6 +51,12 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 - **Cover art**  
   Band cards display artist thumbnails and album cards display cover art, sourced from Discogs or uploaded manually. Records without a stored image fall back to styled dark placeholders with a subtle vinyl or music-note icon.
 
+- **Edit bands and albums**  
+  Hover over any band or album card to reveal edit and delete icon buttons. Clicking the edit icon on a band opens a dialog to rename it. Clicking the edit icon on an album opens a full edit dialog — update the title, year, format, and cover image, and manage the tracklist by editing existing tracks, adding new ones, or removing entries.
+
+- **Delete with confirmation**  
+  The delete icon on each card opens a confirmation dialog before anything is removed. Deleting a band permanently removes it along with all its albums and tracks. Deleting an album removes only that album and its tracks, leaving the band intact.
+
 - **User accounts & route protection**  
   Sign up or sign in with email and password. Unauthenticated visitors are redirected to `/login` by a Next.js middleware that runs on every request. Sessions are managed server-side via Supabase Auth cookies and refreshed automatically.
 
@@ -69,7 +77,7 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 
 ## Roadmap
 
-The Record Vault is built in layers. **Layer 5 is complete**; **Layer 6 is next**.
+The Record Vault is built in layers. **Layer 7 is complete**.
 
 | Layer | Status | Focus |
 |-------|--------|--------|
@@ -78,7 +86,8 @@ The Record Vault is built in layers. **Layer 5 is complete**; **Layer 6 is next*
 | **Layer 3** | Done | Supabase PostgreSQL database — live data fetching, Add New modal form to insert bands & albums |
 | **Layer 4** | Done | Discogs API integration — search Discogs to auto-fill metadata, artwork, and tracklists; cover art on band and album cards |
 | **Layer 5** | **Done** | Auth & security — Supabase Auth (email signup/signin), middleware route protection, RLS, duplicate prevention, cover image uploads to Supabase Storage |
-| **Layer 6** | **Next** | Barcode scanning — scan a record's barcode to identify and add it instantly |
+| **Layer 6** | **Done** | Barcode lookup — search by barcode number via the Discogs API; camera scanning removed in favour of reliable manual entry |
+| **Layer 7** | **Done** | Edit & delete — edit band names, album details and tracklists; delete bands and albums with confirmation dialogs; full CRUD complete |
 | **Later** | Planned | Collection statistics, export/import |
 
 If you have ideas or want a feature prioritized, feel free to open an issue or share feedback.
@@ -112,8 +121,8 @@ The Discogs token is generated at **discogs.com → Settings → Developers → 
 ### Run locally
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Then open `http://localhost:3000` in your browser.
