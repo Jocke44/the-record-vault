@@ -259,7 +259,7 @@ export default function LoginPage() {
         </div>
 
         {/* 3 — Step explainer */}
-        <ol className="flex flex-col items-center gap-3 text-center">
+        <ol className="flex flex-col gap-3">
           {[
             "Create your free account",
             "Confirm your email address",
@@ -267,12 +267,19 @@ export default function LoginPage() {
           ].map((step, i) => (
             <li
               key={i}
-              className="flex items-center gap-2 text-xs"
-              style={{ color: "rgba(255,255,255,0.38)" }}
+              className="text-xs"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                color: "rgba(255,255,255,0.38)",
+              }}
             >
               <span
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
+                className="flex shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
                 style={{
+                  width: "24px",
+                  height: "24px",
                   backgroundColor: "rgba(34,211,238,0.1)",
                   color: "#22d3ee",
                   border: "1px solid rgba(34,211,238,0.25)",
@@ -280,7 +287,7 @@ export default function LoginPage() {
               >
                 {i + 1}
               </span>
-              {step}
+              <span>{step}</span>
             </li>
           ))}
         </ol>
