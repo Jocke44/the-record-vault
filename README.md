@@ -19,6 +19,7 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 - **Full edit support**: Edit band names, album details, and tracklists directly from the collection view.
 - **Delete with confirmation**: Remove bands or albums with a confirmation step before any data is lost.
 - **Per-user collections**: Every user only ever sees and manages their own records — secured by Supabase Auth and Row Level Security at the database level.
+- **Welcoming login page**: A full-bleed moody vinyl photo with a dark overlay, glassmorphism sign-in card, tagline, and a 3-step explainer guiding new users through sign-up and email confirmation.
 
 ---
 
@@ -59,6 +60,9 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 
 - **User accounts & route protection**  
   Sign up or sign in with email and password. Unauthenticated visitors are redirected to `/login` by a Next.js middleware that runs on every request. Sessions are managed server-side via Supabase Auth cookies and refreshed automatically.
+
+- **Login & landing page**  
+  The login page doubles as a landing page — a full-screen vinyl photograph sets the mood, with the app name, tagline ("Get your collection Catalogued."), and a frosted-glass sign-in card centered on top. A 3-step explainer below the form walks new visitors through creating an account, confirming their email, and starting their collection.
 
 - **Row Level Security**  
   Every database row (`bands`, `albums`, `tracks`) is owned by the user who created it. Supabase RLS policies ensure each user can only read and write their own collection — no data leaks between accounts, even if the anon key is exposed.
