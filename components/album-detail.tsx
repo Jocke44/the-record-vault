@@ -3,6 +3,7 @@
 import { ArrowLeft, Disc3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Album } from "@/lib/music-data";
+import { getImageUrl } from "@/lib/get-image-url";
 
 interface AlbumDetailProps {
   album: Album;
@@ -26,7 +27,7 @@ export function AlbumDetail({ album, artistName, onBack }: AlbumDetailProps) {
         <div className="flex aspect-square w-full max-w-xs items-center justify-center overflow-hidden rounded-lg bg-[#1a1a1f]">
           {album.coverImage ? (
             <img
-              src={album.coverImage}
+              src={getImageUrl(album.coverImage)}
               alt={album.title}
               className="h-full w-full object-cover"
             />

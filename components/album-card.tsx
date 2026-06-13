@@ -2,6 +2,7 @@
 
 import { Disc3, Pencil, Trash2 } from "lucide-react";
 import type { Album } from "@/lib/music-data";
+import { getImageUrl } from "@/lib/get-image-url";
 
 interface AlbumCardProps {
   album: Album;
@@ -27,7 +28,7 @@ export function AlbumCard({ album, onClick, onEdit, onDelete }: AlbumCardProps) 
       <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-md bg-[#1a1a1f]">
         {album.coverImage ? (
           <img
-            src={album.coverImage}
+            src={getImageUrl(album.coverImage)}
             alt={album.title}
             className="h-full w-full object-cover"
           />

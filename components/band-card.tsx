@@ -2,6 +2,7 @@
 
 import { Music, Pencil, Trash2 } from "lucide-react";
 import type { Band } from "@/lib/music-data";
+import { getImageUrl } from "@/lib/get-image-url";
 
 interface BandCardProps {
   band: Band;
@@ -27,7 +28,7 @@ export function BandCard({ band, onClick, onEdit, onDelete }: BandCardProps) {
       <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full bg-[#1a1a1f]">
         {band.coverImage ? (
           <img
-            src={band.coverImage}
+            src={getImageUrl(band.coverImage)}
             alt={band.name}
             className="h-full w-full object-cover"
           />

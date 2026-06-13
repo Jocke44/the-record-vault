@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
 
   const url = new URL("https://api.discogs.com/database/search");
   url.searchParams.set("type", "release");
+  url.searchParams.set("per_page", "20");
   if (isBarcode) {
     url.searchParams.set("barcode", trimmed);
   } else {

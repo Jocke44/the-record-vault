@@ -15,7 +15,7 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 - **Persistent database**: All records are stored in a Supabase PostgreSQL database — your collection survives page reloads and is ready to sync across devices.
 - **Add new records**: The **Add New** button opens a modal with two modes — search Discogs to auto-fill everything, or add manually as a fallback.
 - **Discogs integration**: Search Discogs by album or artist name, pick the right pressing, and have the artist, title, year, format, tracklist, and cover art filled in automatically.
-- **Cover art everywhere**: Band cards and album cards display artwork fetched from Discogs or uploaded manually, with styled placeholder icons for records without an image.
+- **Cover art everywhere**: Band cards and album cards display artwork fetched from Discogs or uploaded manually, with styled placeholder icons for records without an image. All Discogs images are served through a server-side proxy to bypass hotlinking restrictions.
 - **Full edit support**: Edit band names, album details, and tracklists directly from the collection view.
 - **Delete with confirmation**: Remove bands or albums with a confirmation step before any data is lost.
 - **Per-user collections**: Every user only ever sees and manages their own records — secured by Supabase Auth and Row Level Security at the database level.
@@ -44,13 +44,13 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
   All bands, albums, and tracks are stored in a PostgreSQL database on Supabase. Data is fetched live on page load — no static mock data in production.
 
 - **Add New — Discogs search**  
-  The **Add New** button opens a two-mode modal. In **Search Discogs** mode, type any album name or artist and browse matching pressings from the Discogs database. Clicking a result fetches the full release details and auto-fills the artist, title, year, format, tracklist, and cover art — then saves everything to Supabase in one step.
+  The **Add New** button opens a two-mode modal. In **Search Discogs** mode, type any album name, artist, or barcode and browse up to 20 matching pressings from the Discogs database. The dialog lazily fetches full release details in parallel so each result displays its actual cover art — the Discogs search endpoint omits image data, so a secondary per-release request is made for each row. Clicking a result auto-fills the artist, title, year, format, tracklist, and cover art, then saves everything to Supabase in one step.
 
 - **Add New — manual fallback**  
   Switch to **Add Manually** to enter all fields by hand, exactly as before. The app checks whether the band already exists and reuses or creates it, inserts the album and tracks, then immediately refreshes the UI.
 
 - **Cover art**  
-  Band cards display artist thumbnails and album cards display cover art, sourced from Discogs or uploaded manually. Records without a stored image fall back to styled dark placeholders with a subtle vinyl or music-note icon.
+  Band cards display artist thumbnails and album cards display cover art, sourced from Discogs or uploaded manually. Records without a stored image fall back to styled dark placeholders with a subtle vinyl or music-note icon. All Discogs images are fetched server-side through `/api/proxy-image` to bypass hotlinking restrictions — the `getImageUrl` utility in `lib/get-image-url.ts` automatically routes Discogs URLs through the proxy while passing Supabase Storage URLs through unchanged.
 
 - **Edit bands and albums**  
   Hover over any band or album card to reveal edit and delete icon buttons. Clicking the edit icon on a band opens a dialog to rename it. Clicking the edit icon on an album opens a full edit dialog — update the title, year, format, and cover image, and manage the tracklist by editing existing tracks, adding new ones, or removing entries.
@@ -81,7 +81,7 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 
 ## Roadmap
 
-The Record Vault is built in layers. **Layer 7 is complete**.
+The Record Vault is built in layers. **Layer 8 is complete**.
 
 | Layer | Status | Focus |
 |-------|--------|--------|
@@ -92,6 +92,7 @@ The Record Vault is built in layers. **Layer 7 is complete**.
 | **Layer 5** | **Done** | Auth & security — Supabase Auth (email signup/signin), middleware route protection, RLS, duplicate prevention, cover image uploads to Supabase Storage |
 | **Layer 6** | **Done** | Barcode lookup — search by barcode number via the Discogs API; camera scanning removed in favour of reliable manual entry |
 | **Layer 7** | **Done** | Edit & delete — edit band names, album details and tracklists; delete bands and albums with confirmation dialogs; full CRUD complete |
+| **Layer 8** | **Done** | Image proxy & search UX — server-side Discogs image proxy, lazy-loaded full-res cover art in search results, wider/taller search dialog |
 | **Later** | Planned | Collection statistics, export/import |
 
 If you have ideas or want a feature prioritized, feel free to open an issue or share feedback.

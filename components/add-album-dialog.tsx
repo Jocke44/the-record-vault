@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useId, useRef, useState, useEffect } from "react";
 import { ImagePlus, Search, Loader2, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getImageUrl } from "@/lib/get-image-url";
 import {
   Dialog,
   DialogContent,
@@ -80,7 +81,7 @@ interface ImagePickerProps {
   label: string;
   preview: string | null;
   fileName?: string;
-  inputRef: React.RefObject<HTMLInputElement>;
+  inputRef: React.RefObject<HTMLInputElement | null>;
   disabled: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: () => void;
@@ -184,6 +185,26 @@ export function AddAlbumDialog({
   >("idle");
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchWarning, setSearchWarning] = useState<string | null>(null);
+  const [resultImages, setResultImages] = useState<Record<number, string>>({});
+
+  // Lazily fetch full-res cover images for the first 10 search results
+  useEffect(() => {
+    setResultImages({});
+    if (searchResults.length === 0) return;
+
+    const slice = searchResults.slice(0, 20);
+    Promise.allSettled(
+      slice.map(async (result) => {
+        const res = await fetch(`/api/discogs/release?id=${result.id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const imageUrl: string | undefined = data.images?.[0]?.uri;
+        if (imageUrl) {
+          setResultImages((prev) => ({ ...prev, [result.id]: imageUrl }));
+        }
+      }),
+    );
+  }, [searchResults]);
 
   // Manual form state
   const [bandName, setBandName] = useState("");
@@ -425,8 +446,8 @@ export function AddAlbumDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className={cn(
-          "border-border bg-card text-foreground sm:max-w-md",
-          "flex max-h-[90vh] flex-col gap-0 p-0",
+          "border-border bg-card text-foreground sm:max-w-2xl",
+          "flex min-h-[600px] max-h-[90vh] flex-col gap-0 p-0",
         )}
       >
         {/* Header */}
@@ -475,7 +496,7 @@ export function AddAlbumDialog({
                   if (e.key === "Enter") handleSearch();
                 }}
                 className={fieldClassName}
-                placeholder="Search for an album or artist…"
+                placeholder="Search by artist, album title or barcode..."
                 disabled={isDisabled}
                 autoFocus
               />
@@ -554,9 +575,9 @@ export function AddAlbumDialog({
                       >
                         {/* Thumbnail — use || (not ??) so empty strings are treated as missing */}
                         <div className="h-12 w-12 shrink-0 overflow-hidden rounded bg-secondary">
-                          {result.thumb || result.cover_image ? (
+                          {resultImages[result.id] || result.thumb || result.cover_image ? (
                             <img
-                              src={result.thumb || result.cover_image}
+                              src={getImageUrl(resultImages[result.id] || result.thumb || result.cover_image)}
                               alt=""
                               className="h-full w-full object-cover"
                             />
