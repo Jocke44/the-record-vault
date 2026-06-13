@@ -186,6 +186,7 @@ export function AddAlbumDialog({
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchWarning, setSearchWarning] = useState<string | null>(null);
   const [resultImages, setResultImages] = useState<Record<number, string>>({});
+  const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
 
   // Lazily fetch full-res cover images for the first 10 search results
   useEffect(() => {
@@ -205,6 +206,13 @@ export function AddAlbumDialog({
       }),
     );
   }, [searchResults]);
+
+  // Re-run search when format filter changes (if a search is already showing results)
+  useEffect(() => {
+    if (!searchQuery.trim() || searchPhase !== "results") return;
+    handleSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFormat]);
 
   // Manual form state
   const [bandName, setBandName] = useState("");
@@ -230,6 +238,7 @@ export function AddAlbumDialog({
     setSearchPhase("idle");
     setSearchError(null);
     setSearchWarning(null);
+    setSelectedFormat(null);
     setBandName("");
     setAlbumTitle("");
     setYear("");
@@ -260,8 +269,9 @@ export function AddAlbumDialog({
     setSearchResults([]);
     setSearchPhase("searching");
     try {
+      const formatParam = selectedFormat ? `&format=${encodeURIComponent(selectedFormat)}` : "";
       const res = await fetch(
-        `/api/discogs/search?q=${encodeURIComponent(q)}`,
+        `/api/discogs/search?q=${encodeURIComponent(q)}${formatParam}`,
       );
       const data = await res.json();
       if (!res.ok) {
@@ -513,6 +523,30 @@ export function AddAlbumDialog({
                 )}
                 {searchPhase === "searching" ? "Searching…" : "Search"}
               </Button>
+            </div>
+
+            {/* Format filter */}
+            <div className="flex items-center gap-1.5">
+              {(["All", "Vinyl", "CD", "Cassette"] as const).map((label) => {
+                const value = label === "All" ? null : label;
+                const active = selectedFormat === value;
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    disabled={isDisabled}
+                    onClick={() => setSelectedFormat(value)}
+                    className={cn(
+                      "rounded-md px-3 py-1 text-xs font-medium transition-colors disabled:opacity-40",
+                      active
+                        ? "border border-cyan-400/40 bg-cyan-400/10 text-cyan-400"
+                        : "border border-transparent text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Loading detail indicator */}

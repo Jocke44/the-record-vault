@@ -15,6 +15,8 @@ export async function GET(request: NextRequest) {
   const trimmed = q.trim();
   const isBarcode = /^\d{8,13}$/.test(trimmed);
 
+  const format = request.nextUrl.searchParams.get("format");
+
   const url = new URL("https://api.discogs.com/database/search");
   url.searchParams.set("type", "release");
   url.searchParams.set("per_page", "20");
@@ -22,6 +24,9 @@ export async function GET(request: NextRequest) {
     url.searchParams.set("barcode", trimmed);
   } else {
     url.searchParams.set("q", trimmed);
+  }
+  if (format && format.trim()) {
+    url.searchParams.set("format", format);
   }
 
   let response: Response;
