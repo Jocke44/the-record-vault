@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   }
 
   const token = process.env.DISCOGS_TOKEN;
+  const searchType = request.nextUrl.searchParams.get("searchType");
 
   const trimmed = q.trim();
   const isBarcode = /^\d{8,13}$/.test(trimmed);
@@ -20,7 +21,9 @@ export async function GET(request: NextRequest) {
   const url = new URL("https://api.discogs.com/database/search");
   url.searchParams.set("type", "release");
   url.searchParams.set("per_page", "20");
-  if (isBarcode) {
+  if (searchType === "catno") {
+    url.searchParams.set("catno", trimmed);
+  } else if (isBarcode) {
     url.searchParams.set("barcode", trimmed);
   } else {
     url.searchParams.set("q", trimmed);

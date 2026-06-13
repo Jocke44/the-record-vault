@@ -187,6 +187,7 @@ export function AddAlbumDialog({
   const [searchWarning, setSearchWarning] = useState<string | null>(null);
   const [resultImages, setResultImages] = useState<Record<number, string>>({});
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
+  const [searchType, setSearchType] = useState<"text" | "catno">("text");
 
   // Lazily fetch full-res cover images for the first 10 search results
   useEffect(() => {
@@ -239,6 +240,7 @@ export function AddAlbumDialog({
     setSearchError(null);
     setSearchWarning(null);
     setSelectedFormat(null);
+    setSearchType("text");
     setBandName("");
     setAlbumTitle("");
     setYear("");
@@ -271,7 +273,7 @@ export function AddAlbumDialog({
     try {
       const formatParam = selectedFormat ? `&format=${encodeURIComponent(selectedFormat)}` : "";
       const res = await fetch(
-        `/api/discogs/search?q=${encodeURIComponent(q)}${formatParam}`,
+        `/api/discogs/search?q=${encodeURIComponent(q)}${formatParam}&searchType=${searchType}`,
       );
       const data = await res.json();
       if (!res.ok) {
@@ -497,6 +499,30 @@ export function AddAlbumDialog({
         {/* ── Search mode ── */}
         {mode === "search" && (
           <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-6 py-6">
+            {/* Search type selector */}
+            <div className="flex items-center gap-1.5">
+              {(["text", "catno"] as const).map((type) => {
+                const label = type === "text" ? "Title / Artist" : "Cat. No.";
+                const active = searchType === type;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    disabled={isDisabled}
+                    onClick={() => setSearchType(type)}
+                    className={cn(
+                      "rounded-md px-3 py-1 text-xs font-medium transition-colors disabled:opacity-40",
+                      active
+                        ? "border border-cyan-400/40 bg-cyan-400/10 text-cyan-400"
+                        : "border border-transparent text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
             {/* Search input row */}
             <div className="flex gap-2">
               <Input
@@ -506,7 +532,11 @@ export function AddAlbumDialog({
                   if (e.key === "Enter") handleSearch();
                 }}
                 className={fieldClassName}
-                placeholder="Search by artist, album title or barcode..."
+                placeholder={
+                  searchType === "catno"
+                    ? "Enter catalog number e.g. 2383 019"
+                    : "Search by artist, album title or barcode..."
+                }
                 disabled={isDisabled}
                 autoFocus
               />
