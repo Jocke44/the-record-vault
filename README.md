@@ -20,6 +20,8 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 - **Delete with confirmation**: Remove bands or albums with a confirmation step before any data is lost.
 - **Per-user collections**: Every user only ever sees and manages their own records — secured by Supabase Auth and Row Level Security at the database level.
 - **Welcoming login page**: A full-bleed moody vinyl photo with a dark overlay, glassmorphism sign-in card, tagline, and a 3-step explainer guiding new users through sign-up and email confirmation.
+- **Catalog number search**: Search Discogs by catalog number (the code printed on every record) alongside title, artist, and barcode — useful for identifying specific pressings.
+- **Alphabetical band sections**: Bands are grouped A → Ö with correct Swedish locale sorting. Leading 'The' is ignored — The Beatles files under B, not T.
 
 ---
 
@@ -39,6 +41,9 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 
 - **Format filter buttons**  
   On the home screen, filter by **All**, **Vinyl**, **CD**, or **EP** to show only bands that own at least one release in that format. Format filters combine with search (e.g. `gr` + **Vinyl** shows matching bands that also have Vinyl in the collection).
+
+- **Catalog number search**  
+  When searching Discogs in the Add New dialog, switch to Cat. No. mode to search by catalog number directly. A toggle above the search bar lets you switch between Title / Artist and Cat. No. search types.
 
 - **Supabase-backed persistence**  
   All bands, albums, and tracks are stored in a PostgreSQL database on Supabase. Data is fetched live on page load — no static mock data in production.
@@ -81,7 +86,7 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 
 ## Roadmap
 
-The Record Vault is built in layers. **Layer 8 is complete**.
+The Record Vault is built in layers. **Layer 9 is complete**.
 
 | Layer | Status | Focus |
 |-------|--------|--------|
@@ -93,7 +98,8 @@ The Record Vault is built in layers. **Layer 8 is complete**.
 | **Layer 6** | **Done** | Barcode lookup — search by barcode number via the Discogs API; camera scanning removed in favour of reliable manual entry |
 | **Layer 7** | **Done** | Edit & delete — edit band names, album details and tracklists; delete bands and albums with confirmation dialogs; full CRUD complete |
 | **Layer 8** | **Done** | Image proxy & search UX — server-side Discogs image proxy, lazy-loaded full-res cover art in search results, wider/taller search dialog |
-| **Later** | Planned | Collection statistics, export/import |
+| **Layer 9** | **Done** | Search & sorting UX — format filter (Vinyl/CD/Cassette) in Discogs search dialog, catalog number search type, alphabetical band sections A → Ö with Swedish locale sorting, The-prefix ignored for grouping |
+| **Later** | Planned | Collection statistics, export collection (CSV + JSON), import collection from file, forgot password flow |
 
 If you have ideas or want a feature prioritized, feel free to open an issue or share feedback.
 
