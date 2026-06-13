@@ -6,7 +6,7 @@ export async function fetchMusicCollection(): Promise<Band[]> {
 
   const [bandsResult, albumsResult, tracksResult] = await Promise.all([
     supabase.from("bands").select("id, name, cover_image"),
-    supabase.from("albums").select("id, title, year, format, band_id, cover_image"),
+    supabase.from("albums").select("id, title, year, format, band_id, cover_image").order("year", { ascending: true }),
     supabase.from("tracks").select("id, title, track_number, album_id"),
   ]);
 

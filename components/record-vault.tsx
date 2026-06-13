@@ -105,8 +105,9 @@ export function RecordVault() {
 
   const normalizedSearch = searchQuery.trim().toLowerCase();
 
+  const sortKey = (name: string) => name.replace(/^The\s+/i, "").trim();
   const sortedBands = [...musicCollection].sort((a, b) =>
-    a.name.localeCompare(b.name),
+    sortKey(a.name).localeCompare(sortKey(b.name), "sv"),
   );
   const filteredBands = sortedBands.filter((band) => {
     if (formatFilter !== "All" && !bandHasFormat(band, formatFilter)) {
@@ -413,16 +414,39 @@ export function RecordVault() {
                   : "No bands in your collection yet."}
               </p>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredBands.map((band) => (
-                  <BandCard
-                    key={band.id}
-                    band={band}
-                    onClick={() => handleBandClick(band)}
-                    onEdit={() => { setPendingEditBand(band); setEditBandName(band.name); }}
-                    onDelete={() => setPendingDeleteBand(band)}
-                  />
-                ))}
+              <div className="flex flex-col gap-8">
+                {filteredBands
+                  .reduce<{ letter: string; bands: Band[] }[]>((acc, band) => {
+                    const letter = sortKey(band.name).charAt(0).toUpperCase();
+                    const last = acc[acc.length - 1];
+                    if (last && last.letter === letter) {
+                      last.bands.push(band);
+                    } else {
+                      acc.push({ letter, bands: [band] });
+                    }
+                    return acc;
+                  }, [])
+                  .map(({ letter, bands }) => (
+                    <div key={letter} className="flex flex-col gap-3">
+                      <div>
+                        <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                          {letter}
+                        </span>
+                        <div className="mt-1 h-px bg-border" />
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {bands.map((band) => (
+                          <BandCard
+                            key={band.id}
+                            band={band}
+                            onClick={() => handleBandClick(band)}
+                            onEdit={() => { setPendingEditBand(band); setEditBandName(band.name); }}
+                            onDelete={() => setPendingDeleteBand(band)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
               </div>
             )}
           </div>
