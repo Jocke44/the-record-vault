@@ -128,9 +128,10 @@ export async function addAlbum(
     }));
 
   if (tracksToInsert.length > 0) {
-    const { error: insertTracksError } = await supabase
+    const { data: insertTracksData, error: insertTracksError } = await supabase
       .from("tracks")
-      .insert(tracksToInsert);
+      .insert(tracksToInsert)
+      .select();
 
     if (insertTracksError) throw insertTracksError;
   }
