@@ -155,3 +155,13 @@ To install: open the live app in Chrome and click the install icon in the addres
 ## Vision
 
 The Record Vault aims to make managing a physical music collection feel as smooth and immediate as using a modern streaming app — while still celebrating the formats, artwork, and rituals that make collecting records special.
+
+---
+
+## Changelog
+
+### 2026-06-19
+
+- Refactored tracks fetch to lazy-load per album on click
+- Removed the 10,000 row Supabase workaround for tracks
+- `fetchTracksForAlbum()` now fetches on demand only
