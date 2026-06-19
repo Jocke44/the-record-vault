@@ -28,9 +28,9 @@ import { AlbumCard } from "@/components/album-card";
 import { AddAlbumDialog } from "@/components/add-album-dialog";
 import { EditAlbumDialog } from "@/components/edit-album-dialog";
 import { AlbumDetail } from "@/components/album-detail";
-import { fetchMusicCollection } from "@/lib/fetch-music-collection";
+import { fetchMusicCollection, fetchTracksForAlbum } from "@/lib/fetch-music-collection";
 import { deleteAlbum, deleteBand } from "@/lib/delete";
-import type { Band, Album, AlbumFormat } from "@/lib/music-data";
+import type { Band, Album, AlbumFormat, Track } from "@/lib/music-data";
 import { cn } from "@/lib/utils";
 
 type View = "bands" | "albums" | "detail";
@@ -71,6 +71,8 @@ export function RecordVault() {
   const [saving, setSaving] = useState(false);
   const [pendingEditAlbum, setPendingEditAlbum] = useState<Album | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [albumTracks, setAlbumTracks] = useState<Track[]>([]);
+  const [tracksLoading, setTracksLoading] = useState(false);
   // Keeps the last album alive during the dialog's exit animation
   const lastEditAlbumRef = useRef<Album | null>(null);
   if (pendingEditAlbum) lastEditAlbumRef.current = pendingEditAlbum;
@@ -141,19 +143,31 @@ export function RecordVault() {
     setCurrentView("albums");
   };
 
-  const handleAlbumClick = (album: Album) => {
+  const handleAlbumClick = async (album: Album) => {
     setSelectedAlbum(album);
+    setAlbumTracks([]);
+    setTracksLoading(true);
     setCurrentView("detail");
+    try {
+      const tracks = await fetchTracksForAlbum(Number(album.id));
+      setAlbumTracks(tracks);
+    } finally {
+      setTracksLoading(false);
+    }
   };
 
   const handleBackToBands = () => {
     setSelectedBand(null);
     setSelectedAlbum(null);
+    setAlbumTracks([]);
+    setTracksLoading(false);
     setCurrentView("bands");
   };
 
   const handleBackToAlbums = () => {
     setSelectedAlbum(null);
+    setAlbumTracks([]);
+    setTracksLoading(false);
     setCurrentView("albums");
   };
 
@@ -560,6 +574,8 @@ export function RecordVault() {
             album={selectedAlbum}
             artistName={selectedBand.name}
             onBack={handleBackToAlbums}
+            tracks={albumTracks}
+            tracksLoading={tracksLoading}
           />
         )}
           </>

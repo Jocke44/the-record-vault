@@ -2,16 +2,18 @@
 
 import { ArrowLeft, Disc3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Album } from "@/lib/music-data";
+import type { Album, Track } from "@/lib/music-data";
 import { getImageUrl } from "@/lib/get-image-url";
 
 interface AlbumDetailProps {
   album: Album;
   artistName: string;
   onBack: () => void;
+  tracks: Track[];
+  tracksLoading: boolean;
 }
 
-export function AlbumDetail({ album, artistName, onBack }: AlbumDetailProps) {
+export function AlbumDetail({ album, artistName, onBack, tracks, tracksLoading }: AlbumDetailProps) {
   return (
     <div className="flex flex-col gap-8">
       <Button
@@ -50,19 +52,23 @@ export function AlbumDetail({ album, artistName, onBack }: AlbumDetailProps) {
 
           <div className="mt-4">
             <h3 className="mb-4 text-lg font-semibold text-foreground">Tracklist</h3>
-            <ol className="flex flex-col gap-2">
-              {album.tracks.map((track) => (
-                <li
-                  key={track.number}
-                  className="flex items-center gap-4 rounded-md px-3 py-2 hover:bg-card transition-colors"
-                >
-                  <span className="w-6 text-right text-sm text-muted-foreground">
-                    {track.number}
-                  </span>
-                  <span className="text-foreground">{track.title}</span>
-                </li>
-              ))}
-            </ol>
+            {tracksLoading ? (
+              <p className="text-muted-foreground">Loading tracks…</p>
+            ) : (
+              <ol className="flex flex-col gap-2">
+                {tracks.map((track) => (
+                  <li
+                    key={track.number}
+                    className="flex items-center gap-4 rounded-md px-3 py-2 hover:bg-card transition-colors"
+                  >
+                    <span className="w-6 text-right text-sm text-muted-foreground">
+                      {track.number}
+                    </span>
+                    <span className="text-foreground">{track.title}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
           </div>
         </div>
       </div>
