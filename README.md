@@ -140,6 +140,18 @@ Then open `http://localhost:3000` in your browser.
 
 ---
 
+## PWA Support
+
+The Record Vault is a Progressive Web App (PWA).
+
+- **Installable** — can be added to your home screen on mobile or desktop
+- **Offline support** — cached routes remain accessible without internet
+- **Native feel** — opens in its own window without browser UI
+
+To install: open the live app in Chrome and click the install icon in the address bar.
+
+---
+
 ## Vision
 
 The Record Vault aims to make managing a physical music collection feel as smooth and immediate as using a modern streaming app — while still celebrating the formats, artwork, and rituals that make collecting records special.
