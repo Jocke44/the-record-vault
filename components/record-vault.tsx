@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Disc, Home, Plus, Search } from "lucide-react";
+import { ArrowLeft, Disc, Home, Menu, Plus, Search } from "lucide-react";
 import { createClient } from "@/src/utils/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,13 @@ function bandHasFormat(band: Band, format: AlbumFormat) {
   return band.albums.some((album) => album.format === format);
 }
 
+function bandSectionId(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/[^\w]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 export function RecordVault() {
   const router = useRouter();
   const [musicCollection, setMusicCollection] = useState<Band[]>([]);
@@ -63,6 +70,7 @@ export function RecordVault() {
   const [editBandName, setEditBandName] = useState("");
   const [saving, setSaving] = useState(false);
   const [pendingEditAlbum, setPendingEditAlbum] = useState<Album | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   // Keeps the last album alive during the dialog's exit animation
   const lastEditAlbumRef = useRef<Album | null>(null);
   if (pendingEditAlbum) lastEditAlbumRef.current = pendingEditAlbum;
@@ -147,6 +155,13 @@ export function RecordVault() {
   const handleBackToAlbums = () => {
     setSelectedAlbum(null);
     setCurrentView("albums");
+  };
+
+  const scrollToBand = (bandName: string) => {
+    document
+      .getElementById(bandSectionId(bandName))
+      ?.scrollIntoView({ behavior: "smooth" });
+    setSidebarOpen(false);
   };
 
   const handleSignOut = async () => {
@@ -376,7 +391,53 @@ export function RecordVault() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <main className="container mx-auto px-4 py-8">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={() => setSidebarOpen((open) => !open)}
+        className="fixed left-4 top-24 z-40 text-muted-foreground hover:text-foreground lg:hidden"
+        aria-label={sidebarOpen ? "Close band list" : "Open band list"}
+        aria-expanded={sidebarOpen}
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+
+      {sidebarOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-30 bg-background/80 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close band list"
+        />
+      )}
+
+      <div className="flex w-full">
+          <aside
+            className={cn(
+              "flex w-[200px] shrink-0 flex-col items-start gap-1 border-r border-border pl-4 pr-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
+              "lg:sticky lg:top-14 lg:max-h-[calc(100vh-3.5rem)] lg:self-start lg:overflow-y-auto",
+              sidebarOpen
+                ? "fixed left-0 top-0 z-40 h-full overflow-y-auto bg-background px-4 py-8 pt-24 lg:static lg:h-auto lg:p-0 lg:pt-0"
+                : "hidden lg:flex",
+            )}
+          >
+            <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              Bands
+            </p>
+            {sortedBands.map((band) => (
+              <button
+                key={band.id}
+                type="button"
+                onClick={() => scrollToBand(band.name)}
+                className="w-full rounded px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              >
+                {band.name}
+              </button>
+            ))}
+          </aside>
+
+      <main className="container mx-auto min-w-0 flex-1 px-4 py-8">
         {loading ? (
           <p className="text-muted-foreground">Loading...</p>
         ) : (
@@ -436,13 +497,20 @@ export function RecordVault() {
                       </div>
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {bands.map((band) => (
-                          <BandCard
-                            key={band.id}
-                            band={band}
-                            onClick={() => handleBandClick(band)}
-                            onEdit={() => { setPendingEditBand(band); setEditBandName(band.name); }}
-                            onDelete={() => setPendingDeleteBand(band)}
-                          />
+                          <div key={band.id} className="scroll-mt-20">
+                            <h3
+                              id={bandSectionId(band.name)}
+                              className="sr-only"
+                            >
+                              {band.name}
+                            </h3>
+                            <BandCard
+                              band={band}
+                              onClick={() => handleBandClick(band)}
+                              onEdit={() => { setPendingEditBand(band); setEditBandName(band.name); }}
+                              onDelete={() => setPendingDeleteBand(band)}
+                            />
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -497,6 +565,7 @@ export function RecordVault() {
           </>
         )}
       </main>
+      </div>
     </div>
   );
 }
