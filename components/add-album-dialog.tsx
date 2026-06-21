@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, useEffect } from "react";
-import { ImagePlus, Search, Loader2, Plus, X } from "lucide-react";
+import { ImagePlus, Search, Loader2, Music, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getImageUrl } from "@/lib/get-image-url";
 import {
@@ -606,12 +606,12 @@ export function AddAlbumDialog({
               <p className="text-sm text-muted-foreground">No results found.</p>
             )}
 
-            {/* Results list */}
+            {/* Results grid */}
             {(searchPhase === "results" ||
               searchPhase === "loading-detail") &&
               searchResults.length > 0 && (
                 <div
-                  className="flex flex-col gap-0.5 overflow-y-auto rounded-md"
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto rounded-md"
                   style={{ maxHeight: "380px" }}
                 >
                   {searchResults.map((result) => {
@@ -624,6 +624,10 @@ export function AddAlbumDialog({
                       separatorIdx !== -1
                         ? result.title.slice(separatorIdx + 3)
                         : "";
+                    const imageUrl =
+                      resultImages[result.id] ||
+                      result.thumb ||
+                      result.cover_image;
 
                     return (
                       <button
@@ -632,32 +636,34 @@ export function AddAlbumDialog({
                         disabled={searchPhase === "loading-detail"}
                         onClick={() => handleSelectResult(result)}
                         className={cn(
-                          "flex items-center gap-3 rounded-md p-2 text-left transition-colors",
-                          "hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400",
+                          "flex flex-col overflow-hidden rounded-lg border border-border text-left transition-colors",
+                          "hover:border-cyan-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400",
                           "disabled:cursor-not-allowed disabled:opacity-50",
                         )}
                       >
-                        {/* Thumbnail — use || (not ??) so empty strings are treated as missing */}
-                        <div className="h-12 w-12 shrink-0 overflow-hidden rounded bg-secondary">
-                          {resultImages[result.id] || result.thumb || result.cover_image ? (
+                        {/* Cover — use || (not ??) so empty strings are treated as missing */}
+                        <div className="h-[200px] w-full shrink-0 overflow-hidden bg-secondary">
+                          {imageUrl ? (
                             <img
-                              src={getImageUrl(resultImages[result.id] || result.thumb || result.cover_image)}
+                              src={getImageUrl(imageUrl)}
                               alt=""
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <div className="h-full w-full bg-secondary" />
+                            <div className="flex h-full w-full items-center justify-center bg-secondary">
+                              <Music className="h-8 w-8 text-muted-foreground" />
+                            </div>
                           )}
                         </div>
 
                         {/* Text */}
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 p-2">
                           <p className="truncate text-sm font-medium text-foreground">
-                            {artist}
+                            {title || artist}
                           </p>
                           {title && (
                             <p className="truncate text-sm text-muted-foreground">
-                              {title}
+                              {artist}
                             </p>
                           )}
                           <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-muted-foreground">
@@ -665,7 +671,6 @@ export function AddAlbumDialog({
                             {result.format && result.format.length > 0 && (
                               <span>{result.format.slice(0, 2).join(", ")}</span>
                             )}
-                            {result.country && <span>{result.country}</span>}
                           </div>
                         </div>
                       </button>
