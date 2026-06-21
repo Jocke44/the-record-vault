@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Disc } from "lucide-react";
 import { createClient } from "@/src/utils/supabase/client";
@@ -239,6 +240,13 @@ export default function LoginPage() {
                   border: "1px solid rgba(255,255,255,0.1)",
                 }}
               />
+              <Link
+                href="/forgot-password"
+                className="self-end text-xs no-underline hover:underline"
+                style={{ color: "rgba(255,255,255,0.4)" }}
+              >
+                Forgot your password?
+              </Link>
             </div>
 
             <Button

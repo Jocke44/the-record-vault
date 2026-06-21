@@ -35,7 +35,8 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  if (!user && pathname !== '/login') {
+  const publicRoutes = ['/login', '/forgot-password', '/reset-password', '/auth/callback']
+  if (!user && !publicRoutes.includes(pathname)) {
     const redirectUrl = new URL('/login', request.url)
     return NextResponse.redirect(redirectUrl)
   }
