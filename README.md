@@ -21,6 +21,7 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 - **Per-user collections**: Every user only ever sees and manages their own records — secured by Supabase Auth and Row Level Security at the database level.
 - **Welcoming login page**: A full-bleed moody vinyl photo with a dark overlay, glassmorphism sign-in card, tagline, and a 3-step explainer guiding new users through sign-up and email confirmation.
 - **Catalog number search**: Search Discogs by catalog number (the code printed on every record) alongside title, artist, and barcode — useful for identifying specific pressings.
+- **Visual search grid**: Discogs search results display as a responsive 2-column card grid with full-width cover art — easy to browse at a glance. Collapses to single column on mobile.
 - **Alphabetical band sections**: Bands are grouped A → Ö with correct Swedish locale sorting. Leading 'The' is ignored — The Beatles files under B, not T.
 
 ---
@@ -99,6 +100,7 @@ The Record Vault is built in layers. **Layer 9 is complete**.
 | **Layer 7** | **Done** | Edit & delete — edit band names, album details and tracklists; delete bands and albums with confirmation dialogs; full CRUD complete |
 | **Layer 8** | **Done** | Image proxy & search UX — server-side Discogs image proxy, lazy-loaded full-res cover art in search results, wider/taller search dialog |
 | **Layer 9** | **Done** | Search & sorting UX — format filter (Vinyl/CD/Cassette) in Discogs search dialog, catalog number search type, alphabetical band sections A → Ö with Swedish locale sorting, The-prefix ignored for grouping |
+| **Layer 10** | **Done** | Search results UI — Discogs search results refactored from thumbnail list to a responsive 2-column card grid with 200px full-width cover art; single column on mobile |
 | **Later** | Planned | Collection statistics, export collection (CSV + JSON), import collection from file, forgot password flow |
 
 If you have ideas or want a feature prioritized, feel free to open an issue or share feedback.
@@ -159,6 +161,11 @@ The Record Vault aims to make managing a physical music collection feel as smoot
 ---
 
 ## Changelog
+
+### 2026-06-21
+
+- Refactored Discogs search results from a thumbnail list to a responsive 2-column card grid with 200px full-width cover art
+- Search grid collapses to a single column on mobile for easier browsing on small screens
 
 ### 2026-06-19
 
