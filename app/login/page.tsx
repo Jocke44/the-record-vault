@@ -100,8 +100,14 @@ export default function LoginPage() {
               The Record Vault
             </h1>
           </div>
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>
+          <p className="text-lg" style={{ color: "rgba(255,255,255,0.5)" }}>
             Get your collection Catalogued.
+          </p>
+          <p
+            className="text-base text-center"
+            style={{ color: "rgba(255,255,255,0.32)" }}
+          >
+            Search Discogs, log your records, and build your personal vinyl archive.
           </p>
         </div>
 
@@ -267,38 +273,40 @@ export default function LoginPage() {
         </div>
 
         {/* 3 — Step explainer */}
-        <ol className="flex flex-col gap-3">
-          {[
-            "Create your free account",
-            "Confirm your email address",
-            "Start building your collection",
-          ].map((step, i) => (
-            <li
-              key={i}
-              className="text-xs"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                color: "rgba(255,255,255,0.38)",
-              }}
-            >
-              <span
-                className="flex shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
+        {mode === "signup" && (
+          <ol className="flex flex-col gap-3">
+            {[
+              "Create your free account",
+              "Confirm your email address",
+              "Start building your collection",
+            ].map((step, i) => (
+              <li
+                key={i}
+                className="text-xs"
                 style={{
-                  width: "24px",
-                  height: "24px",
-                  backgroundColor: "rgba(34,211,238,0.1)",
-                  color: "#22d3ee",
-                  border: "1px solid rgba(34,211,238,0.25)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  color: "rgba(255,255,255,0.38)",
                 }}
               >
-                {i + 1}
-              </span>
-              <span>{step}</span>
-            </li>
-          ))}
-        </ol>
+                <span
+                  className="flex shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
+                  style={{
+                    width: "24px",
+                    height: "24px",
+                    backgroundColor: "rgba(34,211,238,0.1)",
+                    color: "#22d3ee",
+                    border: "1px solid rgba(34,211,238,0.25)",
+                  }}
+                >
+                  {i + 1}
+                </span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        )}
 
       </div>
     </div>
