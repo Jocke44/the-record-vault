@@ -73,6 +73,7 @@ export function RecordVault() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [albumTracks, setAlbumTracks] = useState<Track[]>([]);
   const [tracksLoading, setTracksLoading] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   // Keeps the last album alive during the dialog's exit animation
   const lastEditAlbumRef = useRef<Album | null>(null);
   if (pendingEditAlbum) lastEditAlbumRef.current = pendingEditAlbum;
@@ -185,6 +186,48 @@ export function RecordVault() {
     router.refresh();
   };
 
+  const handleExportJSON = async () => {
+    const supabase = createClient();
+    const { data: bands } = await supabase.from("bands").select("id, name");
+    const { data: albums } = await supabase.from("albums").select("band_id, title, year, format, catalog_number");
+    const result = bands?.map(band => ({
+      name: band.name,
+      albums: albums?.filter(a => Number(a.band_id) === Number(band.id)).map(a => ({
+        title: a.title,
+        year: a.year,
+        format: a.format,
+        catalog_number: a.catalog_number,
+      })) ?? []
+    })) ?? [];
+    const blob = new Blob([JSON.stringify({ bands: result }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "record-vault.json";
+    a.click();
+    URL.revokeObjectURL(url);
+    setExportOpen(false);
+  };
+
+  const handleExportCSV = async () => {
+    const supabase = createClient();
+    const { data: bands } = await supabase.from("bands").select("id, name");
+    const { data: albums } = await supabase.from("albums").select("band_id, title, year, format, catalog_number");
+    const rows = albums?.map(album => {
+      const band = bands?.find(b => Number(b.id) === Number(album.band_id));
+      return `"${band?.name ?? ""}","${album.title ?? ""}","${album.year ?? ""}","${album.format ?? ""}","${album.catalog_number ?? ""}"`;
+    }) ?? [];
+    const csv = ["Band,Album,Year,Format,Catalog Number", ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" }); 
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "record-vault.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    setExportOpen(false);
+  };
+
   const handleSaveEditBand = async () => {
     if (!pendingEditBand) return;
     const trimmed = editBandName.trim();
@@ -283,6 +326,41 @@ export function RecordVault() {
           >
             Sign Out
           </button>
+
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setExportOpen(prev => !prev)}
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Export ↓
+            </button>
+            {exportOpen && (
+              <div
+                className="absolute right-0 top-7 z-50 flex flex-col rounded-md py-1"
+                style={{
+                  backgroundColor: "#111",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  minWidth: "140px",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  className="px-4 py-2 text-left text-sm text-muted-foreground hover:text-white"
+                >
+                  Download CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportJSON}
+                  className="px-4 py-2 text-left text-sm text-muted-foreground hover:text-white"
+                >
+                  Download JSON
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 
