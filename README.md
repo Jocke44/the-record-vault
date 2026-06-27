@@ -162,6 +162,12 @@ The Record Vault aims to make managing a physical music collection feel as smoot
 
 ## Changelog
 
+### 2026-06-26
+
+- Fixed Discogs search result covers collapsing to thin strips on mobile —
+  caused by a nested scroll container inside the dialog's main scroll area;
+  removed the inner scroller so cards keep full height and scroll cleanly
+
 ### 2026-06-21
 
 - Refactored Discogs search results from a thumbnail list to a responsive 2-column card grid with 200px full-width cover art
