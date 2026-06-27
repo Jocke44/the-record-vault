@@ -186,19 +186,15 @@ export function RecordVault() {
     router.refresh();
   };
 
-  const handleExportJSON = async () => {
-    const supabase = createClient();
-    const { data: bands } = await supabase.from("bands").select("id, name");
-    const { data: albums } = await supabase.from("albums").select("band_id, title, year, format, catalog_number");
-    const result = bands?.map(band => ({
+  const handleExportJSON = () => {
+    const result = musicCollection.map(band => ({
       name: band.name,
-      albums: albums?.filter(a => Number(a.band_id) === Number(band.id)).map(a => ({
+      albums: band.albums.map(a => ({
         title: a.title,
         year: a.year,
         format: a.format,
-        catalog_number: a.catalog_number,
-      })) ?? []
-    })) ?? [];
+      }))
+    }));
     const blob = new Blob([JSON.stringify({ bands: result }, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -209,16 +205,14 @@ export function RecordVault() {
     setExportOpen(false);
   };
 
-  const handleExportCSV = async () => {
-    const supabase = createClient();
-    const { data: bands } = await supabase.from("bands").select("id, name");
-    const { data: albums } = await supabase.from("albums").select("band_id, title, year, format, catalog_number");
-    const rows = albums?.map(album => {
-      const band = bands?.find(b => Number(b.id) === Number(album.band_id));
-      return `"${band?.name ?? ""}","${album.title ?? ""}","${album.year ?? ""}","${album.format ?? ""}","${album.catalog_number ?? ""}"`;
-    }) ?? [];
-    const csv = ["Band,Album,Year,Format,Catalog Number", ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" }); 
+  const handleExportCSV = () => {
+    const rows = musicCollection.flatMap(band =>
+      band.albums.map(a =>
+        `"${band.name}","${a.title ?? ""}","${a.year ?? ""}","${a.format ?? ""}"`
+      )
+    );
+    const csv = ["Band,Album,Year,Format", ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
