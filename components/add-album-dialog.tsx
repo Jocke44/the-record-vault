@@ -611,7 +611,7 @@ export function AddAlbumDialog({
               searchPhase === "loading-detail") &&
               searchResults.length > 0 && (
                 <div
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] min-h-0 overflow-y-auto rounded-md"
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-md"
                 >
                   {searchResults.map((result) => {
                     const separatorIdx = result.title.indexOf(" - ");
