@@ -87,7 +87,7 @@ Browse your shelves visually, drill into albums with beautiful artwork, and keep
 
 ## Roadmap
 
-The Record Vault is built in layers. **Layer 9 is complete**.
+The Record Vault is built in layers. **Layer 11 is complete**.
 
 | Layer | Status | Focus |
 |-------|--------|--------|
@@ -101,7 +101,8 @@ The Record Vault is built in layers. **Layer 9 is complete**.
 | **Layer 8** | **Done** | Image proxy & search UX — server-side Discogs image proxy, lazy-loaded full-res cover art in search results, wider/taller search dialog |
 | **Layer 9** | **Done** | Search & sorting UX — format filter (Vinyl/CD/Cassette) in Discogs search dialog, catalog number search type, alphabetical band sections A → Ö with Swedish locale sorting, The-prefix ignored for grouping |
 | **Layer 10** | **Done** | Search results UI — Discogs search results refactored from thumbnail list to a responsive 2-column card grid with 200px full-width cover art; single column on mobile |
-| **Later** | Planned | Collection statistics, export collection (CSV + JSON), import collection from file, forgot password flow |
+| **Layer 11** | **Done** | Export collection — download your full collection as a flat CSV (Band, Album, Year, Format, Catalog Number) or nested JSON via a dropdown in the navbar |
+| **Later** | Planned | Collection statistics, import collection from file |
 
 If you have ideas or want a feature prioritized, feel free to open an issue or share feedback.
 
@@ -161,6 +162,14 @@ The Record Vault aims to make managing a physical music collection feel as smoot
 ---
 
 ## Changelog
+
+### 2026-06-27
+
+- Added CSV and JSON export — download your full collection as a flat CSV
+  (Band, Album, Year, Format, Catalog Number) or nested JSON, via a dropdown
+  in the navbar
+- Fixed export returning empty albums — band/album join used strict equality
+  on mismatched types (number vs string); wrapped both sides in Number()
 
 ### 2026-06-26
 
