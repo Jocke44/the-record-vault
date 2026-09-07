@@ -13,20 +13,24 @@ export async function GET(request: NextRequest) {
   const token = process.env.DISCOGS_TOKEN;
   const searchType = request.nextUrl.searchParams.get("searchType");
 
-  const trimmed = q.trim();
-  const isBarcode = /^\d{8,13}$/.test(trimmed);
-
+  const trimmed = q.trim().replace(/\s+/g, "");
   const format = request.nextUrl.searchParams.get("format");
 
   const url = new URL("https://api.discogs.com/database/search");
   url.searchParams.set("type", "release");
   url.searchParams.set("per_page", "20");
   if (searchType === "catno") {
-    url.searchParams.set("catno", trimmed);
-  } else if (isBarcode) {
+    url.searchParams.set("catno", q.trim());
+  } else if (searchType === "barcode") {
+    if (!/^\d{8,14}$/.test(trimmed)) {
+      return NextResponse.json(
+        { error: "Enter a valid barcode (8–14 digits)." },
+        { status: 400 },
+      );
+    }
     url.searchParams.set("barcode", trimmed);
   } else {
-    url.searchParams.set("q", trimmed);
+    url.searchParams.set("q", q.trim());
   }
   if (format && format.trim()) {
     url.searchParams.set("format", format);

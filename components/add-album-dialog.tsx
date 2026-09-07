@@ -187,7 +187,9 @@ export function AddAlbumDialog({
   const [searchWarning, setSearchWarning] = useState<string | null>(null);
   const [resultImages, setResultImages] = useState<Record<number, string>>({});
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
-  const [searchType, setSearchType] = useState<"text" | "catno">("text");
+  const [searchType, setSearchType] = useState<"text" | "barcode" | "catno">(
+    "barcode",
+  );
 
   // Lazily fetch full-res cover images for the first 10 search results
   useEffect(() => {
@@ -240,7 +242,7 @@ export function AddAlbumDialog({
     setSearchError(null);
     setSearchWarning(null);
     setSelectedFormat(null);
-    setSearchType("text");
+    setSearchType("barcode");
     setBandName("");
     setAlbumTitle("");
     setYear("");
@@ -500,9 +502,14 @@ export function AddAlbumDialog({
         {mode === "search" && (
           <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-6 py-6">
             {/* Search type selector */}
-            <div className="flex items-center gap-1.5">
-              {(["text", "catno"] as const).map((type) => {
-                const label = type === "text" ? "Title / Artist" : "Cat. No.";
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(["barcode", "text", "catno"] as const).map((type) => {
+                const label =
+                  type === "barcode"
+                    ? "Barcode"
+                    : type === "text"
+                      ? "Title / Artist"
+                      : "Cat. No.";
                 const active = searchType === type;
                 return (
                   <button
@@ -533,10 +540,13 @@ export function AddAlbumDialog({
                 }}
                 className={fieldClassName}
                 placeholder={
-                  searchType === "catno"
-                    ? "Enter catalog number e.g. 2383 019"
-                    : "Search by artist, album title or barcode..."
+                  searchType === "barcode"
+                    ? "Enter barcode e.g. 5014797294628"
+                    : searchType === "catno"
+                      ? "Enter catalog number e.g. 2383 019"
+                      : "Search by artist or album title..."
                 }
+                inputMode={searchType === "barcode" ? "numeric" : "search"}
                 disabled={isDisabled}
                 autoFocus
               />
