@@ -349,7 +349,6 @@ export function AddAlbumDialog({
       }
 
       resetAll();
-      onOpenChange(false);
       await onSuccess();
     } catch (err) {
       const message =
@@ -439,7 +438,6 @@ export function AddAlbumDialog({
         ...(bandCoverImageFile ? { bandCoverImageFile } : {}),
       });
       resetAll();
-      onOpenChange(false);
       await onSuccess();
     } catch (err) {
       console.error("Failed to add album:", err);
@@ -500,6 +498,7 @@ export function AddAlbumDialog({
 
         {/* ── Search mode ── */}
         {mode === "search" && (
+          <>
           <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-6 py-6">
             {/* Search type selector */}
             <div className="flex flex-wrap items-center gap-1.5">
@@ -688,6 +687,18 @@ export function AddAlbumDialog({
                 </div>
               )}
           </div>
+          <DialogFooter className="shrink-0 border-t border-border px-6 py-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              disabled={isDisabled}
+              className="border-border"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+          </>
         )}
 
         {/* ── Manual mode ── */}
