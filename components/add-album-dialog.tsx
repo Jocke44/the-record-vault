@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, useEffect } from "react";
-import { ImagePlus, Search, Loader2, Music, Plus, X } from "lucide-react";
+import { Disc3, ImagePlus, Search, Loader2, Music, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getImageUrl } from "@/lib/get-image-url";
 import {
@@ -36,6 +36,7 @@ interface DiscogsSearchResult {
   title: string;
   year?: string;
   format?: string[];
+  label?: string[];
   thumb?: string;
   cover_image?: string;
   country?: string;
@@ -45,6 +46,7 @@ interface DiscogsRelease {
   title: string;
   year: number;
   artists?: { name: string; thumbnail_url?: string }[];
+  labels?: { name: string; catno?: string }[];
   formats?: { name: string }[];
   images?: { uri: string; type: string }[];
   tracklist?: { position: string; title: string; duration: string }[];
@@ -73,6 +75,55 @@ function mapDiscogsFormat(name: string): AlbumFormat {
   if (lower.includes("cd")) return "CD";
   if (lower.includes("ep")) return "EP";
   return "Vinyl";
+}
+
+function buildAlbumPayload(data: DiscogsRelease, result: DiscogsSearchResult) {
+  const artistName = data.artists?.[0]
+    ? stripArtistSuffix(data.artists[0].name)
+    : (result.title.split(" - ")[0]?.trim() ?? "Unknown Artist");
+
+  const releaseFormat = mapDiscogsFormat(data.formats?.[0]?.name ?? "");
+  const coverImage =
+    data.images?.find((img) => img.type === "primary")?.uri ??
+    data.images?.[0]?.uri ??
+    result.thumb ??
+    "";
+
+  const tracklist = (data.tracklist ?? []).map((t) => ({ title: t.title }));
+  const bandCoverImage = data.artists?.[0]?.thumbnail_url || undefined;
+
+  return {
+    bandName: artistName,
+    albumTitle: data.title,
+    year: data.year,
+    format: releaseFormat,
+    tracks: tracklist,
+    coverImage: coverImage || undefined,
+    bandCoverImage,
+    discogsReleaseId: result.id,
+  };
+}
+
+function getReleaseArtistName(
+  data: DiscogsRelease,
+  result: DiscogsSearchResult,
+): string {
+  return data.artists?.[0]
+    ? stripArtistSuffix(data.artists[0].name)
+    : (result.title.split(" - ")[0]?.trim() ?? "Unknown Artist");
+}
+
+function getReleaseCoverUrl(
+  data: DiscogsRelease,
+  result: DiscogsSearchResult,
+): string | undefined {
+  return (
+    data.images?.find((img) => img.type === "primary")?.uri ??
+    data.images?.[0]?.uri ??
+    result.thumb ??
+    result.cover_image ??
+    undefined
+  );
 }
 
 // ── ImagePicker ──────────────────────────────────────────────────────────────
@@ -181,13 +232,18 @@ export function AddAlbumDialog({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<DiscogsSearchResult[]>([]);
   const [searchPhase, setSearchPhase] = useState<
-    "idle" | "searching" | "results" | "loading-detail"
+    "idle" | "searching" | "results" | "loading-detail" | "preview"
   >("idle");
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchWarning, setSearchWarning] = useState<string | null>(null);
   const [resultImages, setResultImages] = useState<Record<number, string>>({});
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
   const [searchType, setSearchType] = useState<"text" | "catno">("text");
+  const [selectedRelease, setSelectedRelease] = useState<DiscogsRelease | null>(
+    null,
+  );
+  const [selectedSearchResult, setSelectedSearchResult] =
+    useState<DiscogsSearchResult | null>(null);
 
   // Lazily fetch full-res cover images for the first 10 search results
   useEffect(() => {
@@ -241,6 +297,8 @@ export function AddAlbumDialog({
     setSearchWarning(null);
     setSelectedFormat(null);
     setSearchType("text");
+    setSelectedRelease(null);
+    setSelectedSearchResult(null);
     setBandName("");
     setAlbumTitle("");
     setYear("");
@@ -292,6 +350,7 @@ export function AddAlbumDialog({
   const handleSelectResult = async (result: DiscogsSearchResult) => {
     setSearchPhase("loading-detail");
     setSearchError(null);
+    setSearchWarning(null);
     try {
       const res = await fetch(`/api/discogs/release?id=${result.id}`);
       const data: DiscogsRelease & { error?: string } = await res.json();
@@ -301,48 +360,48 @@ export function AddAlbumDialog({
         return;
       }
 
-      const artistName = data.artists?.[0]
-        ? stripArtistSuffix(data.artists[0].name)
-        : (result.title.split(" - ")[0]?.trim() ?? "Unknown Artist");
+      setSelectedRelease(data);
+      setSelectedSearchResult(result);
+      setSearchPhase("preview");
+    } catch {
+      setSearchError("Failed to load release details.");
+      setSearchPhase("results");
+    }
+  };
 
-      const releaseFormat = mapDiscogsFormat(data.formats?.[0]?.name ?? "");
-      const coverImage =
-        data.images?.find((img) => img.type === "primary")?.uri ??
-        data.images?.[0]?.uri ??
-        result.thumb ??
-        "";
+  const handleBackToResults = () => {
+    setSelectedRelease(null);
+    setSelectedSearchResult(null);
+    setSearchPhase("results");
+    setSearchError(null);
+    setSearchWarning(null);
+  };
 
-      const tracklist = (data.tracklist ?? []).map((t) => ({ title: t.title }));
+  const handleConfirmAdd = async () => {
+    if (!selectedRelease || !selectedSearchResult) return;
 
-      const bandCoverImage = data.artists?.[0]?.thumbnail_url || undefined;
+    setSubmitting(true);
+    setSearchError(null);
+    setSearchWarning(null);
 
-      const albumPayload = {
-        bandName: artistName,
-        albumTitle: data.title,
-        year: data.year,
-        format: releaseFormat,
-        tracks: tracklist,
-        coverImage: coverImage || undefined,
-        bandCoverImage,
-        discogsReleaseId: result.id,
-      };
-      console.log("[Discogs] Saving album:", {
-        bandName: albumPayload.bandName,
-        albumTitle: albumPayload.albumTitle,
-        year: albumPayload.year,
-        format: albumPayload.format,
-        trackCount: albumPayload.tracks.length,
-      });
+    const albumPayload = buildAlbumPayload(selectedRelease, selectedSearchResult);
+    console.log("[Discogs] Saving album:", {
+      bandName: albumPayload.bandName,
+      albumTitle: albumPayload.albumTitle,
+      year: albumPayload.year,
+      format: albumPayload.format,
+      trackCount: albumPayload.tracks.length,
+    });
 
+    try {
       const saveResult = await addAlbum(albumPayload);
 
       if (!saveResult.success) {
-        if (saveResult.error === 'duplicate') {
-          setSearchWarning('This Discogs release is already in your collection.');
+        if (saveResult.error === "duplicate") {
+          setSearchWarning("This Discogs release is already in your collection.");
         } else {
-          setSearchError('Could not save. Please try again.');
+          setSearchError("Could not save. Please try again.");
         }
-        setSearchPhase('results');
         return;
       }
 
@@ -358,7 +417,8 @@ export function AddAlbumDialog({
             : String(err);
       console.error("[Discogs] Failed to add album:", message);
       setSearchError("Could not save. Please try again.");
-      setSearchPhase("results");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -450,7 +510,24 @@ export function AddAlbumDialog({
   const isDisabled =
     searchPhase === "searching" ||
     searchPhase === "loading-detail" ||
+    searchPhase === "preview" ||
     submitting;
+
+  const previewCoverUrl =
+    selectedRelease && selectedSearchResult
+      ? getReleaseCoverUrl(selectedRelease, selectedSearchResult)
+      : undefined;
+  const previewArtistName =
+    selectedRelease && selectedSearchResult
+      ? getReleaseArtistName(selectedRelease, selectedSearchResult)
+      : "";
+  const previewFormat =
+    selectedRelease != null
+      ? mapDiscogsFormat(selectedRelease.formats?.[0]?.name ?? "")
+      : "Vinyl";
+  const previewLabel = selectedRelease?.labels?.[0]?.name;
+  const previewTracks =
+    selectedRelease?.tracklist?.filter((track) => track.title.trim()) ?? [];
 
   // ── Render ──
 
@@ -498,186 +575,276 @@ export function AddAlbumDialog({
 
         {/* ── Search mode ── */}
         {mode === "search" && (
-          <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-6 py-6">
-            {/* Search type selector */}
-            <div className="flex items-center gap-1.5">
-              {(["text", "catno"] as const).map((type) => {
-                const label = type === "text" ? "Title / Artist" : "Cat. No.";
-                const active = searchType === type;
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    disabled={isDisabled}
-                    onClick={() => setSearchType(type)}
-                    className={cn(
-                      "rounded-md px-3 py-1 text-xs font-medium transition-colors disabled:opacity-40",
-                      active
-                        ? "border border-cyan-400/40 bg-cyan-400/10 text-cyan-400"
-                        : "border border-transparent text-muted-foreground hover:text-foreground",
+          <>
+            <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-6 py-6">
+              {searchPhase !== "preview" && (
+                <>
+                  {/* Search type selector */}
+                  <div className="flex items-center gap-1.5">
+                    {(["text", "catno"] as const).map((type) => {
+                      const label = type === "text" ? "Title / Artist" : "Cat. No.";
+                      const active = searchType === type;
+                      return (
+                        <button
+                          key={type}
+                          type="button"
+                          disabled={isDisabled}
+                          onClick={() => setSearchType(type)}
+                          className={cn(
+                            "rounded-md px-3 py-1 text-xs font-medium transition-colors disabled:opacity-40",
+                            active
+                              ? "border border-cyan-400/40 bg-cyan-400/10 text-cyan-400"
+                              : "border border-transparent text-muted-foreground hover:text-foreground",
+                          )}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Search input row */}
+                  <div className="flex gap-2">
+                    <Input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSearch();
+                      }}
+                      className={fieldClassName}
+                      placeholder={
+                        searchType === "catno"
+                          ? "Enter catalog number e.g. 2383 019"
+                          : "Search by artist, album title or barcode..."
+                      }
+                      disabled={isDisabled}
+                      autoFocus
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleSearch}
+                      disabled={isDisabled || !searchQuery.trim()}
+                      className="shrink-0 gap-1.5"
+                    >
+                      {searchPhase === "searching" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Search className="h-4 w-4" />
+                      )}
+                      {searchPhase === "searching" ? "Searching…" : "Search"}
+                    </Button>
+                  </div>
+
+                  {/* Format filter */}
+                  <div className="flex items-center gap-1.5">
+                    {(["All", "Vinyl", "CD", "Cassette"] as const).map((label) => {
+                      const value = label === "All" ? null : label;
+                      const active = selectedFormat === value;
+                      return (
+                        <button
+                          key={label}
+                          type="button"
+                          disabled={isDisabled}
+                          onClick={() => setSelectedFormat(value)}
+                          className={cn(
+                            "rounded-md px-3 py-1 text-xs font-medium transition-colors disabled:opacity-40",
+                            active
+                              ? "border border-cyan-400/40 bg-cyan-400/10 text-cyan-400"
+                              : "border border-transparent text-muted-foreground hover:text-foreground",
+                          )}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Loading detail indicator */}
+                  {searchPhase === "loading-detail" && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin text-cyan-400" />
+                      Loading details…
+                    </div>
+                  )}
+
+                  {/* No results */}
+                  {searchPhase === "results" && searchResults.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No results found.</p>
+                  )}
+
+                  {/* Results grid */}
+                  {(searchPhase === "results" ||
+                    searchPhase === "loading-detail") &&
+                    searchResults.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-md">
+                        {searchResults.map((result) => {
+                          const separatorIdx = result.title.indexOf(" - ");
+                          const artist =
+                            separatorIdx !== -1
+                              ? result.title.slice(0, separatorIdx)
+                              : result.title;
+                          const title =
+                            separatorIdx !== -1
+                              ? result.title.slice(separatorIdx + 3)
+                              : "";
+                          const imageUrl =
+                            resultImages[result.id] ||
+                            result.thumb ||
+                            result.cover_image;
+
+                          return (
+                            <button
+                              key={result.id}
+                              type="button"
+                              disabled={searchPhase === "loading-detail"}
+                              onClick={() => handleSelectResult(result)}
+                              className={cn(
+                                "flex flex-col overflow-hidden rounded-lg border border-border text-left transition-colors",
+                                "hover:border-cyan-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400",
+                                "disabled:cursor-not-allowed disabled:opacity-50",
+                              )}
+                            >
+                              <div className="h-[200px] w-full shrink-0 overflow-hidden bg-secondary">
+                                {imageUrl ? (
+                                  <img
+                                    src={getImageUrl(imageUrl)}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center bg-secondary">
+                                    <Music className="h-8 w-8 text-muted-foreground" />
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="min-w-0 p-2">
+                                <p className="truncate text-sm font-medium text-foreground">
+                                  {title || artist}
+                                </p>
+                                {title && (
+                                  <p className="truncate text-sm text-muted-foreground">
+                                    {artist}
+                                  </p>
+                                )}
+                                <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-muted-foreground">
+                                  {result.year && <span>{result.year}</span>}
+                                  {result.label?.[0] && <span>{result.label[0]}</span>}
+                                  {result.format && result.format.length > 0 && (
+                                    <span>{result.format.slice(0, 2).join(", ")}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
+                </>
+              )}
 
-            {/* Search input row */}
-            <div className="flex gap-2">
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSearch();
-                }}
-                className={fieldClassName}
-                placeholder={
-                  searchType === "catno"
-                    ? "Enter catalog number e.g. 2383 019"
-                    : "Search by artist, album title or barcode..."
-                }
-                disabled={isDisabled}
-                autoFocus
-              />
-              <Button
-                type="button"
-                onClick={handleSearch}
-                disabled={isDisabled || !searchQuery.trim()}
-                className="shrink-0 gap-1.5"
-              >
-                {searchPhase === "searching" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Search className="h-4 w-4" />
-                )}
-                {searchPhase === "searching" ? "Searching…" : "Search"}
-              </Button>
-            </div>
+              {searchPhase === "preview" && selectedRelease && selectedSearchResult && (
+                <div className="flex flex-col gap-6">
+                  <div className="flex flex-col gap-6 sm:flex-row sm:gap-8">
+                    <div className="flex aspect-square w-full max-w-[200px] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary sm:max-w-[220px]">
+                      {previewCoverUrl ? (
+                        <img
+                          src={getImageUrl(previewCoverUrl)}
+                          alt={selectedRelease.title}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Disc3
+                          className="h-16 w-16 text-muted-foreground/40"
+                          strokeWidth={1.25}
+                        />
+                      )}
+                    </div>
 
-            {/* Format filter */}
-            <div className="flex items-center gap-1.5">
-              {(["All", "Vinyl", "CD", "Cassette"] as const).map((label) => {
-                const value = label === "All" ? null : label;
-                const active = selectedFormat === value;
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    disabled={isDisabled}
-                    onClick={() => setSelectedFormat(value)}
-                    className={cn(
-                      "rounded-md px-3 py-1 text-xs font-medium transition-colors disabled:opacity-40",
-                      active
-                        ? "border border-cyan-400/40 bg-cyan-400/10 text-cyan-400"
-                        : "border border-transparent text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Loading detail indicator */}
-            {searchPhase === "loading-detail" && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin text-cyan-400" />
-                Loading details…
-              </div>
-            )}
-
-            {/* Error */}
-            {searchError && (
-              <p className="text-sm text-destructive" role="alert">
-                {searchError}
-              </p>
-            )}
-
-            {/* Duplicate warning */}
-            {searchWarning && (
-              <p className="text-sm text-amber-400" role="alert">
-                {searchWarning}
-              </p>
-            )}
-
-            {/* No results */}
-            {searchPhase === "results" && searchResults.length === 0 && (
-              <p className="text-sm text-muted-foreground">No results found.</p>
-            )}
-
-            {/* Results grid */}
-            {(searchPhase === "results" ||
-              searchPhase === "loading-detail") &&
-              searchResults.length > 0 && (
-                <div
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-md"
-                >
-                  {searchResults.map((result) => {
-                    const separatorIdx = result.title.indexOf(" - ");
-                    const artist =
-                      separatorIdx !== -1
-                        ? result.title.slice(0, separatorIdx)
-                        : result.title;
-                    const title =
-                      separatorIdx !== -1
-                        ? result.title.slice(separatorIdx + 3)
-                        : "";
-                    const imageUrl =
-                      resultImages[result.id] ||
-                      result.thumb ||
-                      result.cover_image;
-
-                    return (
-                      <button
-                        key={result.id}
-                        type="button"
-                        disabled={searchPhase === "loading-detail"}
-                        onClick={() => handleSelectResult(result)}
-                        className={cn(
-                          "flex flex-col overflow-hidden rounded-lg border border-border text-left transition-colors",
-                          "hover:border-cyan-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400",
-                          "disabled:cursor-not-allowed disabled:opacity-50",
-                        )}
-                      >
-                        {/* Cover — use || (not ??) so empty strings are treated as missing */}
-                        <div className="h-[200px] w-full shrink-0 overflow-hidden bg-secondary">
-                          {imageUrl ? (
-                            <img
-                              src={getImageUrl(imageUrl)}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-secondary">
-                              <Music className="h-8 w-8 text-muted-foreground" />
-                            </div>
+                    <div className="flex min-w-0 flex-col gap-3">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-muted-foreground">{previewArtistName}</span>
+                        <h3 className="text-xl font-bold text-foreground">
+                          {selectedRelease.title}
+                        </h3>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          {selectedRelease.year != null && (
+                            <span className="text-sm text-muted-foreground">
+                              {selectedRelease.year}
+                            </span>
+                          )}
+                          <span className="rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
+                            {previewFormat}
+                          </span>
+                          {previewLabel && (
+                            <span className="text-sm text-muted-foreground">
+                              {previewLabel}
+                            </span>
                           )}
                         </div>
+                      </div>
+                    </div>
+                  </div>
 
-                        {/* Text */}
-                        <div className="min-w-0 p-2">
-                          <p className="truncate text-sm font-medium text-foreground">
-                            {title || artist}
-                          </p>
-                          {title && (
-                            <p className="truncate text-sm text-muted-foreground">
-                              {artist}
-                            </p>
-                          )}
-                          <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-muted-foreground">
-                            {result.year && <span>{result.year}</span>}
-                            {result.format && result.format.length > 0 && (
-                              <span>{result.format.slice(0, 2).join(", ")}</span>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
+                  {previewTracks.length > 0 && (
+                    <div>
+                      <h4 className="mb-3 text-sm font-semibold text-foreground">
+                        Tracklist
+                      </h4>
+                      <ol className="flex flex-col gap-1.5">
+                        {previewTracks.map((track, index) => (
+                          <li
+                            key={`${track.position}-${index}`}
+                            className="flex items-center gap-3 rounded-md px-2 py-1.5"
+                          >
+                            <span className="w-6 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
+                              {track.position || index + 1}
+                            </span>
+                            <span className="text-sm text-foreground">{track.title}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
                 </div>
               )}
-          </div>
+
+              {/* Error */}
+              {searchError && (
+                <p className="text-sm text-destructive" role="alert">
+                  {searchError}
+                </p>
+              )}
+
+              {/* Duplicate warning */}
+              {searchWarning && (
+                <p className="text-sm text-amber-400" role="alert">
+                  {searchWarning}
+                </p>
+              )}
+            </div>
+
+            {searchPhase === "preview" && (
+              <DialogFooter className="shrink-0 border-t border-border px-6 py-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleBackToResults}
+                  disabled={submitting}
+                  className="border-border"
+                >
+                  Back to results
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleConfirmAdd}
+                  disabled={submitting}
+                >
+                  {submitting ? "Adding…" : "Confirm Add"}
+                </Button>
+              </DialogFooter>
+            )}
+          </>
         )}
 
         {/* ── Manual mode ── */}
