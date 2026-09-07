@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
+function normalizeBarcode(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+function isBarcodeValue(value: string): boolean {
+  const digits = normalizeBarcode(value);
+  return digits.length >= 8 && digits.length <= 14;
+}
+
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q");
 
@@ -14,17 +23,26 @@ export async function GET(request: NextRequest) {
   const searchType = request.nextUrl.searchParams.get("searchType");
 
   const trimmed = q.trim();
-  const isBarcode = /^\d{8,13}$/.test(trimmed);
+  const barcodeDigits = normalizeBarcode(trimmed);
+  const looksLikeBarcode = isBarcodeValue(trimmed);
 
   const format = request.nextUrl.searchParams.get("format");
 
   const url = new URL("https://api.discogs.com/database/search");
   url.searchParams.set("type", "release");
   url.searchParams.set("per_page", "20");
-  if (searchType === "catno") {
+  if (searchType === "barcode") {
+    if (!looksLikeBarcode) {
+      return NextResponse.json(
+        { error: "Enter a valid barcode (8–14 digits)." },
+        { status: 400 },
+      );
+    }
+    url.searchParams.set("barcode", barcodeDigits);
+  } else if (searchType === "catno") {
     url.searchParams.set("catno", trimmed);
-  } else if (isBarcode) {
-    url.searchParams.set("barcode", trimmed);
+  } else if (looksLikeBarcode) {
+    url.searchParams.set("barcode", barcodeDigits);
   } else {
     url.searchParams.set("q", trimmed);
   }

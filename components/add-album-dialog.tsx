@@ -187,7 +187,9 @@ export function AddAlbumDialog({
   const [searchWarning, setSearchWarning] = useState<string | null>(null);
   const [resultImages, setResultImages] = useState<Record<number, string>>({});
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
-  const [searchType, setSearchType] = useState<"text" | "catno">("text");
+  const [searchType, setSearchType] = useState<"text" | "catno" | "barcode">(
+    "text",
+  );
 
   // Lazily fetch full-res cover images for the first 10 search results
   useEffect(() => {
@@ -262,6 +264,14 @@ export function AddAlbumDialog({
   };
 
   // ── Discogs search ──
+
+  const handleSearchTypeChange = (type: "text" | "catno" | "barcode") => {
+    setSearchType(type);
+    setSearchResults([]);
+    setSearchPhase("idle");
+    setSearchError(null);
+    setSearchWarning(null);
+  };
 
   const handleSearch = async () => {
     const q = searchQuery.trim();
@@ -500,16 +510,21 @@ export function AddAlbumDialog({
         {mode === "search" && (
           <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-6 py-6">
             {/* Search type selector */}
-            <div className="flex items-center gap-1.5">
-              {(["text", "catno"] as const).map((type) => {
-                const label = type === "text" ? "Title / Artist" : "Cat. No.";
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(["text", "catno", "barcode"] as const).map((type) => {
+                const label =
+                  type === "text"
+                    ? "Title / Artist"
+                    : type === "catno"
+                      ? "Cat. No."
+                      : "Barcode";
                 const active = searchType === type;
                 return (
                   <button
                     key={type}
                     type="button"
                     disabled={isDisabled}
-                    onClick={() => setSearchType(type)}
+                    onClick={() => handleSearchTypeChange(type)}
                     className={cn(
                       "rounded-md px-3 py-1 text-xs font-medium transition-colors disabled:opacity-40",
                       active
@@ -535,7 +550,9 @@ export function AddAlbumDialog({
                 placeholder={
                   searchType === "catno"
                     ? "Enter catalog number e.g. 2383 019"
-                    : "Search by artist, album title or barcode..."
+                    : searchType === "barcode"
+                      ? "Enter barcode e.g. 602577915123"
+                      : "Search by artist or album title..."
                 }
                 disabled={isDisabled}
                 autoFocus
@@ -603,16 +620,18 @@ export function AddAlbumDialog({
 
             {/* No results */}
             {searchPhase === "results" && searchResults.length === 0 && (
-              <p className="text-sm text-muted-foreground">No results found.</p>
+              <p className="text-sm text-muted-foreground">
+                {selectedFormat
+                  ? `No results found. Try clearing the ${selectedFormat} format filter.`
+                  : "No results found."}
+              </p>
             )}
 
             {/* Results grid */}
             {(searchPhase === "results" ||
               searchPhase === "loading-detail") &&
               searchResults.length > 0 && (
-                <div
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-md"
-                >
+                <div className="grid grid-cols-1 content-start gap-3 rounded-md sm:grid-cols-2">
                   {searchResults.map((result) => {
                     const separatorIdx = result.title.indexOf(" - ");
                     const artist =
@@ -635,13 +654,13 @@ export function AddAlbumDialog({
                         disabled={searchPhase === "loading-detail"}
                         onClick={() => handleSelectResult(result)}
                         className={cn(
-                          "flex flex-col overflow-hidden rounded-lg border border-border text-left transition-colors",
+                          "flex min-h-[250px] flex-col overflow-hidden rounded-lg border border-border text-left transition-colors",
                           "hover:border-cyan-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400",
                           "disabled:cursor-not-allowed disabled:opacity-50",
                         )}
                       >
                         {/* Cover — use || (not ??) so empty strings are treated as missing */}
-                        <div className="h-[200px] w-full shrink-0 overflow-hidden bg-secondary">
+                        <div className="h-[200px] min-h-[200px] w-full flex-none overflow-hidden bg-secondary">
                           {imageUrl ? (
                             <img
                               src={getImageUrl(imageUrl)}
@@ -667,6 +686,7 @@ export function AddAlbumDialog({
                           )}
                           <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-muted-foreground">
                             {result.year && <span>{result.year}</span>}
+                            {result.country && <span>{result.country}</span>}
                             {result.format && result.format.length > 0 && (
                               <span>{result.format.slice(0, 2).join(", ")}</span>
                             )}
