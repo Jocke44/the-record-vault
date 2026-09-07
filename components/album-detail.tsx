@@ -44,6 +44,9 @@ export function AlbumDetail({ album, artistName, onBack, tracks, tracksLoading }
             <h2 className="text-3xl font-bold text-foreground">{album.title}</h2>
             <div className="flex items-center gap-3 mt-1">
               <span className="text-muted-foreground">{album.year}</span>
+              {album.label && (
+                <span className="text-muted-foreground">{album.label}</span>
+              )}
               <span className="rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
                 {album.format}
               </span>

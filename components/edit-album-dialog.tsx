@@ -63,6 +63,7 @@ export function EditAlbumDialog({
 }: EditAlbumDialogProps) {
   const [title, setTitle] = useState(album.title);
   const [year, setYear] = useState(String(album.year));
+  const [label, setLabel] = useState(album.label ?? "");
   const [format, setFormat] = useState<AlbumFormat>(album.format);
 
   const [coverPreview, setCoverPreview] = useState<string | null>(
@@ -84,6 +85,7 @@ export function EditAlbumDialog({
 
     setTitle(album.title);
     setYear(String(album.year));
+    setLabel(album.label ?? "");
     setFormat(album.format);
     setCoverPreview(album.coverImage ?? null);
     setCoverFile(null);
@@ -218,6 +220,7 @@ export function EditAlbumDialog({
           year: parsedYear,
           format,
           cover_image: coverUrl,
+          label: label.trim() || null,
         })
         .eq("id", Number(album.id));
       if (albumError) throw albumError;
@@ -337,6 +340,22 @@ export function EditAlbumDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label className="text-foreground">
+              Label
+              <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                optional
+              </span>
+            </Label>
+            <Input
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              className={fieldClassName}
+              placeholder="e.g. Columbia"
+              disabled={isDisabled}
+            />
           </div>
 
           {/* Cover image */}

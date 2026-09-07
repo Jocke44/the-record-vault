@@ -12,6 +12,7 @@ export interface Album {
   format: AlbumFormat;
   tracks: Track[];
   coverImage?: string;
+  label?: string;
 }
 
 export interface Band {
