@@ -23,7 +23,7 @@ export async function fetchMusicCollection(): Promise<Band[]> {
 
   const [bandsResult, albumsResult] = await Promise.all([
     supabase.from("bands").select("id, name, cover_image"),
-    supabase.from("albums").select("id, title, year, format, band_id, cover_image").order("year", { ascending: true }),
+    supabase.from("albums").select("id, title, year, format, band_id, cover_image, label").order("year", { ascending: true }),
   ]);
 
   if (bandsResult.error) throw bandsResult.error;
@@ -38,6 +38,7 @@ export async function fetchMusicCollection(): Promise<Band[]> {
       format: row.format as AlbumFormat,
       tracks: [],
       coverImage: row.cover_image ?? undefined,
+      label: row.label ?? undefined,
     };
     const bandAlbums = albumsByBandId.get(row.band_id) ?? [];
     bandAlbums.push(album);

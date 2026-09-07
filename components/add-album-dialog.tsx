@@ -48,6 +48,7 @@ interface DiscogsRelease {
   formats?: { name: string }[];
   images?: { uri: string; type: string }[];
   tracklist?: { position: string; title: string; duration: string }[];
+  labels?: { name: string; catno?: string }[];
 }
 
 // ── Manual-form track helper ─────────────────────────────────────────────────
@@ -219,6 +220,7 @@ export function AddAlbumDialog({
   const [bandName, setBandName] = useState("");
   const [albumTitle, setAlbumTitle] = useState("");
   const [year, setYear] = useState("");
+  const [label, setLabel] = useState("");
   const [format, setFormat] = useState<AlbumFormat>("Vinyl");
   const [tracks, setTracks] = useState<TrackRow[]>(() => [makeTrack()]);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
@@ -244,6 +246,7 @@ export function AddAlbumDialog({
     setBandName("");
     setAlbumTitle("");
     setYear("");
+    setLabel("");
     setFormat("Vinyl");
     setTracks([makeTrack()]);
     setCoverImageFile(null);
@@ -325,6 +328,7 @@ export function AddAlbumDialog({
         coverImage: coverImage || undefined,
         bandCoverImage,
         discogsReleaseId: result.id,
+        label: data.labels?.[0]?.name,
       };
       console.log("[Discogs] Saving album:", {
         bandName: albumPayload.bandName,
@@ -435,6 +439,7 @@ export function AddAlbumDialog({
         tracks: tracks.map((t) => ({ title: t.title })),
         ...(coverImageFile ? { coverImageFile } : {}),
         ...(bandCoverImageFile ? { bandCoverImageFile } : {}),
+        ...(label.trim() ? { label: label.trim() } : {}),
       });
       resetAll();
       onOpenChange(false);
@@ -760,6 +765,23 @@ export function AddAlbumDialog({
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="record-label" className="text-foreground">
+                    Label
+                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                      optional
+                    </span>
+                  </Label>
+                  <Input
+                    id="record-label"
+                    value={label}
+                    onChange={(e) => setLabel(e.target.value)}
+                    className={fieldClassName}
+                    placeholder="e.g. Columbia"
+                    disabled={submitting}
+                  />
                 </div>
               </div>
 
