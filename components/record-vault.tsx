@@ -78,8 +78,9 @@ export function RecordVault() {
   const lastEditAlbumRef = useRef<Album | null>(null);
   if (pendingEditAlbum) lastEditAlbumRef.current = pendingEditAlbum;
 
-  const refreshCollection = useCallback(async () => {
+  const refreshCollection = useCallback(async (isCancelled?: () => boolean) => {
     const data = await fetchMusicCollection();
+    if (isCancelled?.()) return;
     setMusicCollection(data);
     setSelectedBand((prev) => {
       if (!prev) return prev;
@@ -97,6 +98,7 @@ export function RecordVault() {
 
   useEffect(() => {
     let cancelled = false;
+    const isCancelled = () => cancelled;
 
     fetchMusicCollection()
       .then((data) => {
@@ -109,10 +111,27 @@ export function RecordVault() {
         if (!cancelled) setLoading(false);
       });
 
+    const supabase = createClient();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (
+        (event === "SIGNED_IN" || event === "INITIAL_SESSION") &&
+        session
+      ) {
+        refreshCollection(isCancelled).catch((error) => {
+          if (!cancelled) {
+            console.error("Failed to load collection:", error);
+          }
+        });
+      }
+    });
+
     return () => {
       cancelled = true;
+      subscription.unsubscribe();
     };
-  }, []);
+  }, [refreshCollection]);
 
   const normalizedSearch = searchQuery.trim().toLowerCase();
 
