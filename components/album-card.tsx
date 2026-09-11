@@ -68,8 +68,15 @@ export function AlbumCard({ album, onClick, onEdit, onDelete }: AlbumCardProps) 
           {album.title}
         </span>
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm text-muted-foreground">{album.year}</span>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2">
+            <span className="text-sm text-muted-foreground">{album.year}</span>
+            {album.label?.trim() && (
+              <span className="line-clamp-1 text-xs text-muted-foreground">
+                {album.label.trim()}
+              </span>
+            )}
+          </div>
+          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
             {album.format}
           </span>
         </div>
