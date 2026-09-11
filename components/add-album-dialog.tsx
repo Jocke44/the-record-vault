@@ -101,6 +101,7 @@ function buildAlbumPayload(data: DiscogsRelease, result: DiscogsSearchResult) {
     coverImage: coverImage || undefined,
     bandCoverImage,
     discogsReleaseId: result.id,
+    label: data.labels?.[0]?.name,
   };
 }
 
@@ -238,7 +239,9 @@ export function AddAlbumDialog({
   const [searchWarning, setSearchWarning] = useState<string | null>(null);
   const [resultImages, setResultImages] = useState<Record<number, string>>({});
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
-  const [searchType, setSearchType] = useState<"text" | "catno">("text");
+  const [searchType, setSearchType] = useState<"text" | "barcode" | "catno">(
+    "barcode",
+  );
   const [selectedRelease, setSelectedRelease] = useState<DiscogsRelease | null>(
     null,
   );
@@ -275,6 +278,7 @@ export function AddAlbumDialog({
   const [bandName, setBandName] = useState("");
   const [albumTitle, setAlbumTitle] = useState("");
   const [year, setYear] = useState("");
+  const [label, setLabel] = useState("");
   const [format, setFormat] = useState<AlbumFormat>("Vinyl");
   const [tracks, setTracks] = useState<TrackRow[]>(() => [makeTrack()]);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
@@ -296,12 +300,13 @@ export function AddAlbumDialog({
     setSearchError(null);
     setSearchWarning(null);
     setSelectedFormat(null);
-    setSearchType("text");
+    setSearchType("barcode");
     setSelectedRelease(null);
     setSelectedSearchResult(null);
     setBandName("");
     setAlbumTitle("");
     setYear("");
+    setLabel("");
     setFormat("Vinyl");
     setTracks([makeTrack()]);
     setCoverImageFile(null);
@@ -391,6 +396,7 @@ export function AddAlbumDialog({
       year: albumPayload.year,
       format: albumPayload.format,
       trackCount: albumPayload.tracks.length,
+      label: albumPayload.label,
     });
 
     try {
@@ -406,7 +412,6 @@ export function AddAlbumDialog({
       }
 
       resetAll();
-      onOpenChange(false);
       await onSuccess();
     } catch (err) {
       const message =
@@ -495,9 +500,9 @@ export function AddAlbumDialog({
         tracks: tracks.map((t) => ({ title: t.title })),
         ...(coverImageFile ? { coverImageFile } : {}),
         ...(bandCoverImageFile ? { bandCoverImageFile } : {}),
+        ...(label.trim() ? { label: label.trim() } : {}),
       });
       resetAll();
-      onOpenChange(false);
       await onSuccess();
     } catch (err) {
       console.error("Failed to add album:", err);
@@ -580,9 +585,14 @@ export function AddAlbumDialog({
               {searchPhase !== "preview" && (
                 <>
                   {/* Search type selector */}
-                  <div className="flex items-center gap-1.5">
-                    {(["text", "catno"] as const).map((type) => {
-                      const label = type === "text" ? "Title / Artist" : "Cat. No.";
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(["barcode", "text", "catno"] as const).map((type) => {
+                      const typeLabel =
+                        type === "barcode"
+                          ? "Barcode"
+                          : type === "text"
+                            ? "Title / Artist"
+                            : "Cat. No.";
                       const active = searchType === type;
                       return (
                         <button
@@ -597,7 +607,7 @@ export function AddAlbumDialog({
                               : "border border-transparent text-muted-foreground hover:text-foreground",
                           )}
                         >
-                          {label}
+                          {typeLabel}
                         </button>
                       );
                     })}
@@ -613,10 +623,13 @@ export function AddAlbumDialog({
                       }}
                       className={fieldClassName}
                       placeholder={
-                        searchType === "catno"
-                          ? "Enter catalog number e.g. 2383 019"
-                          : "Search by artist, album title or barcode..."
+                        searchType === "barcode"
+                          ? "Enter barcode e.g. 5014797294628"
+                          : searchType === "catno"
+                            ? "Enter catalog number e.g. 2383 019"
+                            : "Search by artist or album title..."
                       }
+                      inputMode={searchType === "barcode" ? "numeric" : "search"}
                       disabled={isDisabled}
                       autoFocus
                     />
@@ -637,12 +650,12 @@ export function AddAlbumDialog({
 
                   {/* Format filter */}
                   <div className="flex items-center gap-1.5">
-                    {(["All", "Vinyl", "CD", "Cassette"] as const).map((label) => {
-                      const value = label === "All" ? null : label;
+                    {(["All", "Vinyl", "CD", "Cassette"] as const).map((fmt) => {
+                      const value = fmt === "All" ? null : fmt;
                       const active = selectedFormat === value;
                       return (
                         <button
-                          key={label}
+                          key={fmt}
                           type="button"
                           disabled={isDisabled}
                           onClick={() => setSelectedFormat(value)}
@@ -653,7 +666,7 @@ export function AddAlbumDialog({
                               : "border border-transparent text-muted-foreground hover:text-foreground",
                           )}
                         >
-                          {label}
+                          {fmt}
                         </button>
                       );
                     })}
@@ -824,7 +837,7 @@ export function AddAlbumDialog({
               )}
             </div>
 
-            {searchPhase === "preview" && (
+            {searchPhase === "preview" ? (
               <DialogFooter className="shrink-0 border-t border-border px-6 py-4">
                 <Button
                   type="button"
@@ -841,6 +854,18 @@ export function AddAlbumDialog({
                   disabled={submitting}
                 >
                   {submitting ? "Adding…" : "Confirm Add"}
+                </Button>
+              </DialogFooter>
+            ) : (
+              <DialogFooter className="shrink-0 border-t border-border px-6 py-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleOpenChange(false)}
+                  disabled={isDisabled}
+                  className="border-border"
+                >
+                  Close
                 </Button>
               </DialogFooter>
             )}
@@ -927,6 +952,23 @@ export function AddAlbumDialog({
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="record-label" className="text-foreground">
+                    Label
+                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                      optional
+                    </span>
+                  </Label>
+                  <Input
+                    id="record-label"
+                    value={label}
+                    onChange={(e) => setLabel(e.target.value)}
+                    className={fieldClassName}
+                    placeholder="e.g. Columbia"
+                    disabled={submitting}
+                  />
                 </div>
               </div>
 

@@ -16,6 +16,7 @@ export interface AddAlbumInput {
   bandCoverImage?: string;
   bandCoverImageFile?: File;
   discogsReleaseId?: number;
+  label?: string;
 }
 
 export async function addAlbum(
@@ -106,6 +107,7 @@ export async function addAlbum(
       user_id: user.id,
       ...(resolvedCoverImage ? { cover_image: resolvedCoverImage } : {}),
       ...(input.discogsReleaseId !== undefined ? { discogs_release_id: input.discogsReleaseId } : {}),
+      ...(input.label?.trim() ? { label: input.label.trim() } : {}),
     })
     .select("id")
     .single();
